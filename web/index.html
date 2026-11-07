@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HSC Essay Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a maths-notebook "engine manual" — grid paper, equations in mono boxes, every essay part has one fixed colour used everywhere. */
+:root{
+  --paper:#f3f5f9;
+  --card:#ffffff;
+  --ink:#14213a;
+  --muted:#5a6680;
+  --line:#d9dfea;
+  --accent:#2350d8;
+  --accent-ink:#ffffff;
+  --grid:rgba(35,80,216,.06);
+  --c-thesis:#7b3fd0; --b-thesis:#efe6fb;
+  --c-topic:#1f63d6;  --b-topic:#e3edfd;
+  --c-evidence:#b26a00; --b-evidence:#fdf0d9;
+  --c-analysis:#178a4c; --b-analysis:#dff4e8;
+  --c-context:#c43a64; --b-context:#fbe3ea;
+  --c-link:#4b5d78;   --b-link:#e7ebf2;
+  --good:#178a4c; --bad:#c4362e; --warn:#b26a00;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0e1422; --card:#161e30; --ink:#e6ebf5; --muted:#9aa6bf; --line:#27324a;
+    --accent:#6f95ff; --accent-ink:#0b1020; --grid:rgba(111,149,255,.06);
+    --c-thesis:#b892f5; --b-thesis:#2b2045;
+    --c-topic:#79a7ff;  --b-topic:#1a2a4a;
+    --c-evidence:#f0b45a; --b-evidence:#3a2b12;
+    --c-analysis:#5fd394; --b-analysis:#123526;
+    --c-context:#f3829f; --b-context:#3d1a26;
+    --c-link:#a8b6cc;   --b-link:#242e42;
+    --good:#5fd394; --bad:#ff7d74; --warn:#f0b45a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+    --paper:#0e1422; --card:#161e30; --ink:#e6ebf5; --muted:#9aa6bf; --line:#27324a;
+    --accent:#6f95ff; --accent-ink:#0b1020; --grid:rgba(111,149,255,.06);
+    --c-thesis:#b892f5; --b-thesis:#2b2045;
+    --c-topic:#79a7ff;  --b-topic:#1a2a4a;
+    --c-evidence:#f0b45a; --b-evidence:#3a2b12;
+    --c-analysis:#5fd394; --b-analysis:#123526;
+    --c-context:#f3829f; --b-context:#3d1a26;
+    --c-link:#a8b6cc;   --b-link:#242e42;
+    --good:#5fd394; --bad:#ff7d74; --warn:#f0b45a;
+    color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:22px 22px;
+  color:var(--ink); font-family:var(--f-body); font-size:16px; line-height:1.6;
+}
+h1,h2,h3,h4{font-family:var(--f-display); line-height:1.15; text-wrap:balance; margin:0}
+h1{font-size:clamp(1.9rem,6vw,2.8rem); font-weight:800; letter-spacing:-.02em}
+h2{font-size:clamp(1.45rem,4.5vw,1.9rem); font-weight:800; letter-spacing:-.01em}
+h3{font-size:1.18rem; font-weight:700}
+h4{font-size:1rem; font-weight:700}
+p{margin:0}
+a{color:var(--accent)}
+code,.mono{font-family:var(--f-mono)}
+button{font:inherit; color:inherit}
+:focus-visible{outline:3px solid var(--accent); outline-offset:2px; border-radius:6px}
+
+header.top{max-width:1080px; margin:0 auto; padding:28px 16px 10px; display:grid; gap:10px}
+.eyebrow{font-family:var(--f-mono); font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.lede{max-width:65ch; color:var(--muted)}
+.stats{display:flex; flex-wrap:wrap; gap:8px; margin-top:6px}
+.chip{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--card); border-radius:999px; padding:4px 12px; font-size:.85rem; font-variant-numeric:tabular-nums}
+.chip b{font-family:var(--f-mono)}
+
+nav.tabs{position:sticky; top:0; z-index:20; background:color-mix(in srgb,var(--paper) 92%,transparent); backdrop-filter:blur(6px); border-bottom:1px solid var(--line)}
+nav.tabs .inner{max-width:1080px; margin:0 auto; display:flex; gap:4px; overflow-x:auto; padding:8px 16px; scrollbar-width:none}
+nav.tabs .inner::-webkit-scrollbar{display:none}
+nav.tabs a{flex:0 0 auto; text-decoration:none; color:var(--muted); font-weight:600; font-size:.9rem; padding:7px 12px; border-radius:8px; white-space:nowrap}
+nav.tabs a .n{font-family:var(--f-mono); font-size:.75rem; opacity:.7; margin-right:5px}
+nav.tabs a[aria-current="page"]{background:var(--accent); color:var(--accent-ink)}
+
+main{max-width:1080px; margin:0 auto; padding:18px 16px 60px}
+section.view{display:none; gap:18px}
+section.view.active{display:grid}
+.card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; display:grid; gap:12px; min-width:0}
+.grid2{display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:14px}
+.grid3{display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+.readable{max-width:68ch}
+ul.clean{margin:0; padding-left:1.2em; display:grid; gap:6px}
+.callout{border-left:4px solid var(--accent); background:color-mix(in srgb,var(--accent) 8%,var(--card)); padding:12px 14px; border-radius:0 10px 10px 0}
+.callout.warn{border-color:var(--warn); background:color-mix(in srgb,var(--warn) 9%,var(--card))}
+
+/* equation boxes */
+.eq{font-family:var(--f-mono); font-size:.95rem; background:var(--paper); border:1px dashed var(--line); border-radius:10px; padding:12px 14px; overflow-x:auto; line-height:1.9}
+.eq .op{color:var(--muted); padding:0 4px}
+.var{display:inline-block; padding:0 7px; border-radius:6px; font-weight:600; white-space:nowrap}
+.v-thesis{color:var(--c-thesis); background:var(--b-thesis)}
+.v-topic{color:var(--c-topic); background:var(--b-topic)}
+.v-evidence{color:var(--c-evidence); background:var(--b-evidence)}
+.v-analysis{color:var(--c-analysis); background:var(--b-analysis)}
+.v-context{color:var(--c-context); background:var(--b-context)}
+.v-link{color:var(--c-link); background:var(--b-link)}
+.v-plain{color:var(--ink); background:var(--b-link)}
+.legend{display:flex; flex-wrap:wrap; gap:6px}
+.eqname{font-family:var(--f-mono); font-size:.78rem; color:var(--muted); letter-spacing:.04em; text-transform:uppercase}
+
+/* exam map */
+.paper{display:grid; gap:8px}
+.slot{display:grid; grid-template-columns:62px 1fr; gap:10px; align-items:center; border:1px solid var(--line); border-radius:10px; padding:10px; background:var(--paper)}
+.slot .mk{font-family:var(--f-mono); font-weight:600; font-size:1.05rem; text-align:center; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px 0}
+.slot.essay .mk{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.bar{height:10px; border-radius:6px; background:var(--line); overflow:hidden; display:flex}
+.bar span{display:block; height:100%}
+
+/* rubric */
+table{border-collapse:collapse; width:100%; font-size:.92rem}
+th,td{text-align:left; vertical-align:top; padding:9px 10px; border-bottom:1px solid var(--line)}
+th{font-family:var(--f-mono); font-size:.76rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:500}
+.tablewrap{overflow-x:auto}
+.band{font-family:var(--f-mono); font-weight:600; white-space:nowrap}
+.pill{display:inline-block; font-family:var(--f-mono); font-size:.75rem; padding:2px 8px; border-radius:999px; border:1px solid var(--line); white-space:nowrap}
+.pill.top{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+
+/* ladder */
+.ladder{display:grid; gap:6px}
+.rung{display:grid; grid-template-columns:52px 1fr auto; gap:10px; align-items:center; text-align:left; width:100%; border:1px solid var(--line); background:var(--paper); border-radius:10px; padding:10px; cursor:pointer}
+.rung .lv{font-family:var(--f-mono); font-weight:600; text-align:center}
+.rung[aria-pressed="true"]{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 10%,var(--card))}
+.ladder-out{border:1px solid var(--line); border-radius:12px; padding:14px; background:var(--card); min-height:120px}
+
+/* essay */
+.essay p{margin:0 0 14px; max-width:72ch}
+.essay [data-part]{border-radius:4px; padding:1px 2px; transition:background .2s}
+.essay.colour [data-part="thesis"]{background:var(--b-thesis); box-shadow:inset 0 -2px 0 var(--c-thesis)}
+.essay.colour [data-part="topic"]{background:var(--b-topic); box-shadow:inset 0 -2px 0 var(--c-topic)}
+.essay.colour [data-part="evidence"]{background:var(--b-evidence); box-shadow:inset 0 -2px 0 var(--c-evidence)}
+.essay.colour [data-part="analysis"]{background:var(--b-analysis); box-shadow:inset 0 -2px 0 var(--c-analysis)}
+.essay.colour [data-part="context"]{background:var(--b-context); box-shadow:inset 0 -2px 0 var(--c-context)}
+.essay.colour [data-part="link"]{background:var(--b-link); box-shadow:inset 0 -2px 0 var(--c-link)}
+.essay .plabel{font-family:var(--f-mono); font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); display:block; margin:18px 0 4px}
+.question{font-family:var(--f-display); font-weight:700; font-size:1.1rem; border:2px solid var(--ink); border-radius:10px; padding:12px 14px}
+.note{font-size:.85rem; color:var(--muted)}
+
+/* buttons */
+.btn{border:1px solid var(--line); background:var(--card); border-radius:9px; padding:8px 14px; cursor:pointer; font-weight:600; font-size:.92rem}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn:disabled{opacity:.5; cursor:not-allowed}
+.row{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden}
+.seg button{border:0; background:var(--card); padding:7px 12px; cursor:pointer; font-weight:600; font-size:.88rem}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+
+/* video player */
+.player{border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--card)}
+.screen{min-height:300px; padding:22px; background:var(--paper); display:grid; align-content:start; gap:14px}
+.screen .cap{font-family:var(--f-display); font-weight:700; font-size:1.15rem}
+.screen .build{font-size:1.02rem; line-height:1.75; max-width:70ch}
+.screen .build .var{white-space:normal; display:inline}
+.screen .new{animation:pop .6s ease}
+@keyframes pop{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+@media (prefers-reduced-motion: reduce){ .screen .new{animation:none} .essay [data-part]{transition:none} }
+.controls{display:flex; align-items:center; gap:8px; padding:10px 12px; border-top:1px solid var(--line); flex-wrap:wrap}
+.prog{flex:1 1 160px; height:6px; background:var(--line); border-radius:4px; overflow:hidden; min-width:120px}
+.prog span{display:block; height:100%; background:var(--accent); width:0}
+.eps{display:flex; flex-wrap:wrap; gap:8px}
+
+/* drills */
+.drillpick{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px}
+.dcard{text-align:left; border:1px solid var(--line); background:var(--card); border-radius:12px; padding:14px; cursor:pointer; display:grid; gap:4px}
+.dcard:hover{border-color:var(--accent)}
+.dcard .t{font-weight:700}
+.dcard .s{font-size:.85rem; color:var(--muted)}
+.dcard .best{font-family:var(--f-mono); font-size:.75rem; color:var(--muted)}
+.qbox{display:grid; gap:12px}
+.qtext{font-size:1.05rem; font-weight:500}
+.qquote{font-style:italic; border-left:3px solid var(--c-evidence); padding-left:10px}
+.opts{display:grid; gap:8px}
+.opt{text-align:left; border:1px solid var(--line); background:var(--paper); border-radius:10px; padding:10px 12px; cursor:pointer}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{border-color:var(--good); background:color-mix(in srgb,var(--good) 14%,var(--card))}
+.opt.wrong{border-color:var(--bad); background:color-mix(in srgb,var(--bad) 12%,var(--card))}
+.why{border-radius:10px; padding:10px 12px; background:var(--paper); border:1px solid var(--line); font-size:.93rem}
+.why.ok{border-color:var(--good)} .why.no{border-color:var(--bad)}
+.dprog{display:flex; gap:4px}
+.dprog i{flex:1; height:6px; border-radius:3px; background:var(--line)}
+.dprog i.ok{background:var(--good)} .dprog i.no{background:var(--bad)} .dprog i.cur{background:var(--accent)}
+.tok{display:inline-block; border:1px solid var(--line); background:var(--paper); border-radius:7px; padding:4px 8px; margin:3px; cursor:pointer}
+.tok[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.tok.miss{border-color:var(--warn); border-style:dashed}
+.tok.extra{border-color:var(--bad)}
+.order-list{display:grid; gap:6px}
+.order-item{text-align:left; border:1px solid var(--line); background:var(--paper); border-radius:10px; padding:9px 12px; cursor:pointer; display:grid; grid-template-columns:28px 1fr; gap:8px}
+.order-item .num{font-family:var(--f-mono); font-weight:600; color:var(--muted)}
+.order-item.placed{border-color:var(--accent)}
+.order-item.placed .num{color:var(--accent)}
+
+/* writing */
+textarea,input[type="text"],select{width:100%; font:inherit; color:var(--ink); background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:10px 12px}
+textarea{min-height:320px; line-height:1.65; resize:vertical}
+label{font-weight:600; font-size:.9rem}
+.field{display:grid; gap:5px}
+.timer{font-family:var(--f-mono); font-size:2rem; font-weight:600; font-variant-numeric:tabular-nums}
+.meter{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px}
+.meter div{border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:var(--paper)}
+.meter b{font-family:var(--f-mono); font-size:1.2rem; display:block}
+.audit li.pass::marker{content:"✓  "; color:var(--good)}
+.audit li.fail::marker{content:"✗  "; color:var(--bad)}
+.audit li.info::marker{content:"•  "; color:var(--muted)}
+.ai-out{white-space:pre-wrap}
+.mark-big{font-family:var(--f-display); font-weight:800; font-size:2.6rem; line-height:1}
+
+/* svg diagrams */
+.diagram{overflow-x:auto}
+.diagram svg{display:block; max-width:100%; height:auto; min-width:560px}
+.diagram svg text{font-family:var(--f-body); fill:var(--ink)}
+
+.plan-table td:first-child{font-family:var(--f-mono); white-space:nowrap}
+.copyline{display:flex; gap:8px; align-items:flex-start; justify-content:space-between; border-bottom:1px solid var(--line); padding:6px 0}
+.copyline:last-child{border-bottom:0}
+.copyline button{flex:0 0 auto; font-size:.78rem; padding:3px 9px}
+footer{max-width:1080px; margin:0 auto; padding:0 16px 40px; color:var(--muted); font-size:.82rem; display:grid; gap:6px}
+.sources a{word-break:break-word}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <span class="eyebrow">NSW English Advanced 11–12 Syllabus (2024) · HSC 2027</span>
+  <h1>HSC Essay Engine</h1>
+  <p class="lede">An essay is a proof. You state a claim (the thesis), then prove it with evidence and reasoning, one step at a time. This page turns that proof into formulas, shows you a full-mark-style essay built from them, then drills you until the moves are automatic.</p>
+  <div class="stats" aria-live="polite">
+    <span class="chip">Reps today <b id="st-today">0</b></span>
+    <span class="chip">Day streak <b id="st-streak">0</b></span>
+    <span class="chip">All-time reps <b id="st-total">0</b></span>
+    <span class="chip">Accuracy <b id="st-acc">–</b></span>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Sections">
+  <div class="inner" id="tabs">
+    <a href="#start"><span class="n">01</span>The exam</a>
+    <a href="#rubric"><span class="n">02</span>What markers want</a>
+    <a href="#formulas"><span class="n">03</span>Formulas</a>
+    <a href="#ladder"><span class="n">04</span>Analysis ladder</a>
+    <a href="#watch"><span class="n">05</span>Watch it built</a>
+    <a href="#model"><span class="n">06</span>Model essay</a>
+    <a href="#modules"><span class="n">07</span>Per module</a>
+    <a href="#drills"><span class="n">08</span>Drills</a>
+    <a href="#write"><span class="n">09</span>Write + get marked</a>
+    <a href="#plan"><span class="n">10</span>Training plan</a>
+    <a href="#texts"><span class="n">11</span>2027 texts</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- 01 EXAM -->
+<section class="view" id="v-start">
+  <div class="card">
+    <h2>The game you're playing</h2>
+    <p class="readable">Your class of 2027 is the first cohort to sit the new English Advanced syllabus. The four Year 12 focus areas are the same names you'll hear in class: <b>Texts and human experiences</b>, <b>Textual conversations</b> (Module A), <b>Critical study of literature</b> (Module B) and <b>The craft of writing</b> (Module C). The HSC is 100 marks over two papers, and <b>three of the five sections are 20-mark essays</b>. Get the essay machine right and you've covered 60% of the exam, plus most of your school assessments.</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <span class="eqname">Paper 1 · 1 h 30 + 10 min reading</span>
+      <div class="paper">
+        <div class="slot"><span class="mk">20</span><div><b>Section I: short answers</b><br><span class="small muted">5–6 questions on unseen texts about human experiences</span></div></div>
+        <div class="slot essay"><span class="mk">20</span><div><b>Section II: Common module essay</b><br><span class="small muted">One essay on your prescribed text. Same question as English Standard.</span></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <span class="eqname">Paper 2 · 2 h + 5 min reading</span>
+      <div class="paper">
+        <div class="slot essay"><span class="mk">20</span><div><b>Section I: Module A essay</b><br><span class="small muted">Your two paired texts, compared</span></div></div>
+        <div class="slot essay"><span class="mk">20</span><div><b>Section II: Module B essay</b><br><span class="small muted">One text, studied deeply. May include a stimulus or extract.</span></div></div>
+        <div class="slot"><span class="mk">20</span><div><b>Section III: Module C writing</b><br><span class="small muted">Imaginative, discursive, persuasive or reflective. May have 2 parts.</span></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>The numbers that matter</h3>
+    <div class="grid3">
+      <div><div class="eqname">Time per essay</div><div class="eq">T = 40 min = <span class="var v-plain">5 plan</span> + <span class="var v-plain">32 write</span> + <span class="var v-plain">3 check</span></div></div>
+      <div><div class="eqname">Target length</div><div class="eq">W ≈ 1000–1200 words<br>≈ 30 words / min</div></div>
+      <div><div class="eqname">Share of exam</div><div class="eq">3 essays × 20 = 60 / 100</div></div>
+    </div>
+    <p class="small muted">Timing and length are coaching norms, not NESA rules. Quality beats length; a sharp 950 words beats a padded 1400.</p>
+  </div>
+  <div class="card">
+    <h3>Diagram: one essay, every time</h3>
+    <p class="small muted">Every 20-mark analytical essay in this course is this shape. Only the content inside the boxes changes by module.</p>
+    <div class="diagram">
+      <svg viewBox="0 0 860 300" role="img" aria-label="Essay skeleton: introduction 150 words, three body paragraphs of 280 words, conclusion 100 words">
+        <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+        <rect x="10" y="20" width="150" height="120" rx="12" fill="var(--b-thesis)" stroke="var(--c-thesis)"/>
+        <text x="85" y="52" text-anchor="middle" font-weight="700">INTRO</text>
+        <text x="85" y="76" text-anchor="middle" font-size="13">~150 words</text>
+        <text x="85" y="98" text-anchor="middle" font-size="12">thesis · context</text>
+        <text x="85" y="116" text-anchor="middle" font-size="12">3-part roadmap</text>
+        <line x1="160" y1="80" x2="196" y2="80" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)"/>
+        <g>
+          <rect x="200" y="20" width="150" height="120" rx="12" fill="var(--b-topic)" stroke="var(--c-topic)"/>
+          <text x="275" y="52" text-anchor="middle" font-weight="700">BODY 1</text>
+          <text x="275" y="76" text-anchor="middle" font-size="13">~280 words</text>
+          <text x="275" y="98" text-anchor="middle" font-size="12">sub-argument A</text>
+          <text x="275" y="116" text-anchor="middle" font-size="12">3 pieces of evidence</text>
+        </g>
+        <line x1="350" y1="80" x2="386" y2="80" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)"/>
+        <g>
+          <rect x="390" y="20" width="150" height="120" rx="12" fill="var(--b-topic)" stroke="var(--c-topic)"/>
+          <text x="465" y="52" text-anchor="middle" font-weight="700">BODY 2</text>
+          <text x="465" y="76" text-anchor="middle" font-size="13">~280 words</text>
+          <text x="465" y="98" text-anchor="middle" font-size="12">sub-argument B</text>
+          <text x="465" y="116" text-anchor="middle" font-size="12">builds on A</text>
+        </g>
+        <line x1="540" y1="80" x2="576" y2="80" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)"/>
+        <g>
+          <rect x="580" y="20" width="150" height="120" rx="12" fill="var(--b-topic)" stroke="var(--c-topic)"/>
+          <text x="655" y="52" text-anchor="middle" font-weight="700">BODY 3</text>
+          <text x="655" y="76" text-anchor="middle" font-size="13">~280 words</text>
+          <text x="655" y="98" text-anchor="middle" font-size="12">sub-argument C</text>
+          <text x="655" y="116" text-anchor="middle" font-size="12">biggest idea last</text>
+        </g>
+        <line x1="730" y1="80" x2="766" y2="80" stroke="var(--muted)" stroke-width="2" marker-end="url(#ar)"/>
+        <rect x="770" y="35" width="80" height="90" rx="12" fill="var(--b-link)" stroke="var(--c-link)"/>
+        <text x="810" y="70" text-anchor="middle" font-weight="700" font-size="13">CONCL.</text>
+        <text x="810" y="92" text-anchor="middle" font-size="12">~100</text>
+        <path d="M85 140 C85 250, 810 250, 810 125" fill="none" stroke="var(--c-thesis)" stroke-width="2" stroke-dasharray="6 5"/>
+        <text x="430" y="232" text-anchor="middle" font-size="13" fill="var(--c-thesis)">the thesis is the thread: every paragraph proves one part of it</text>
+        <text x="430" y="285" text-anchor="middle" font-size="13" fill="var(--muted)">Total ≈ 150 + 3 × 280 + 100 = 1090 words</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- 02 RUBRIC -->
+<section class="view" id="v-rubric">
+  <div class="card">
+    <h2>What markers actually reward</h2>
+    <p class="readable">Markers use a 5-band criteria table for each 20-mark essay. The criteria are nearly identical across modules. The <b>only thing that changes between bands is the adverb</b>: describe → soundly → effectively → skilfully. So "how do I get 20?" really means "what does <i>skilful</i> look like?" Below is the 2024 HSC Module A table (paraphrased), translated into plain behaviour.</p>
+  </div>
+  <div class="card">
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>Marks</th><th>NESA criteria (paraphrased)</th><th>What that means you did</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill top">17–20</span></td><td><b>Skilfully</b> evaluates the question's idea. <b>Well-informed</b> understanding of context, language, form and ideas. <b>Well-selected, detailed</b> references. <b>Insightful</b> response.</td><td>Sharp thesis that answers <i>this</i> question, held all the way through. Every quote earns its place and is analysed for how and why. Context is woven into analysis. You say something a smart reader hadn't thought of.</td></tr>
+        <tr><td><span class="pill">13–16</span></td><td><b>Effectively</b> evaluates. <b>Informed</b> understanding. <b>Detailed</b> references. <b>Effective</b> response.</td><td>Good essay, clear argument, solid quotes. But some analysis stops at "this shows", context sits in its own sentences, or the thesis drifts from the question.</td></tr>
+        <tr><td><span class="pill">9–12</span></td><td>Evaluates. <b>Sound</b> understanding. References. <b>Sound</b> response.</td><td>Knows the text, has quotes, but often names techniques without explaining effect, or partly retells the plot.</td></tr>
+        <tr><td><span class="pill">5–8</span></td><td><b>Describes</b> some aspects. <b>Some</b> understanding. <b>Limited</b> references.</td><td>Mostly plot retelling. Few quotes. No real argument.</td></tr>
+        <tr><td><span class="pill">1–4</span></td><td><b>Attempts</b> to describe and respond.</td><td>Incomplete or off-topic.</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note">Marking guidelines for the 2027 exam are written with the paper, so wording will shift per question. The ladder of adverbs has been stable for years.</p>
+  </div>
+  <div class="card">
+    <h3>The 8 laws, from HSC marker feedback</h3>
+    <p class="small muted">Pulled from NESA's published "in better responses" and "areas to improve" notes for the 2025 English Advanced exam. These are the patterns that separate top essays.</p>
+    <div class="grid2">
+      <div class="callout"><b>1. Answer every part of the question.</b> Better responses addressed all aspects of the question throughout, not just in the intro.</div>
+      <div class="callout"><b>2. Analyse, never retell.</b> "Moving beyond paraphrasing or summarising" and "rather than retelling plot events" appear in nearly every module's feedback.</div>
+      <div class="callout"><b>3. Weave context in.</b> Markers praised integrating contextual values into analysis; they criticised describing context separately.</div>
+      <div class="callout"><b>4. Use a confident personal voice.</b> "Confident personal voice and informed judgements" is the most repeated phrase in the 2025 Module B feedback.</div>
+      <div class="callout"><b>5. Be clear, not fancy.</b> Students were told to avoid overly complex or wordy language and use precise technical terms (form, genre, style).</div>
+      <div class="callout"><b>6. Use a conceptual thesis.</b> A thesis about an idea (power, endurance, conformity) rather than about plot. Don't reproduce a prepared response.</div>
+      <div class="callout"><b>7. Integrate evidence.</b> Quotes go inside your sentences and get analysed, not listed at the start or end of a paragraph.</div>
+      <div class="callout"><b>8. Balance (Module A).</b> Treat both texts evenly and evaluate how one responds to the other.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 FORMULAS -->
+<section class="view" id="v-formulas">
+  <div class="card">
+    <h2>The formulas</h2>
+    <p class="readable">Each part of an essay has a job. Each job has a formula. Learn the colours: they're used the same way in the model essay, the videos and the drills.</p>
+    <div class="legend">
+      <span class="var v-thesis">Thesis</span><span class="var v-topic">Topic sentence / roadmap</span><span class="var v-evidence">Evidence + technique</span><span class="var v-analysis">Analysis: effect + idea</span><span class="var v-context">Context</span><span class="var v-link">Link back</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="eqname">F0 · The whole essay</span>
+    <div class="eq">Essay = <span class="var v-thesis">Intro</span> + <span class="var v-topic">BP₁</span> + <span class="var v-topic">BP₂</span> + <span class="var v-topic">BP₃</span> + <span class="var v-link">Conclusion</span></div>
+    <p class="small">Three body paragraphs is the sweet spot for 40 minutes: enough to build an argument, few enough to go deep. Order them small → big, so your final paragraph carries your most sophisticated point (usually about structure or the whole text).</p>
+  </div>
+
+  <div class="card">
+    <span class="eqname">F1 · Thesis (the most important sentence you'll write)</span>
+    <div class="eq"><span class="var v-thesis">Thesis</span> = <span class="var v-plain">Composer + text</span> <span class="op">+</span> <span class="var v-plain">precise verb</span> <span class="op">+</span> <span class="var v-plain">Idea from the question</span> <span class="op">+</span> <span class="var v-plain">Complication</span></div>
+    <div class="eq">Insight = Idea + Tension &nbsp;&nbsp;<span class="muted">// "X, yet also Y" beats "X"</span></div>
+    <p class="small">The complication is the secret. "Lawson shows the drover's wife is resilient" is a fact. "Lawson reveals that her resilience is paradoxical: the stoicism that lets her survive also erodes the self it protects" is an <i>argument</i>, and arguments are what get 17+.</p>
+    <div class="grid2">
+      <div class="why no"><b>✗ Band 3–4 thesis</b><br>"In The Drover's Wife, Henry Lawson shows many human experiences like loneliness and fear."</div>
+      <div class="why ok"><b>✓ Band 6 thesis</b><br>"Henry Lawson's 'The Drover's Wife' reveals that human endurance is fundamentally paradoxical: the same stoicism that allows an isolated individual to survive hardship also quietly erodes the self it protects."</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="eqname">F2 · Introduction (~150 words, 4 sentences)</span>
+    <div class="eq"><span class="var v-thesis">Intro</span> = <span class="var v-thesis">S1 Thesis</span> <span class="op">+</span> <span class="var v-context">S2 Context</span> <span class="op">+</span> <span class="var v-topic">S3 Roadmap (A, B, C)</span> <span class="op">+</span> <span class="var v-thesis">S4 Answer the question's verb</span></div>
+    <ul class="clean small">
+      <li><b>S1:</b> answer the question immediately. No "Since the dawn of time".</li>
+      <li><b>S2:</b> one sentence of context that matters to your argument (when, where, why the composer wrote it).</li>
+      <li><b>S3:</b> name your three sub-arguments in one sentence. These become your three topic sentences.</li>
+      <li><b>S4:</b> if the question says "to what extent", give an extent ("largely", "only partly", "entirely"). If it says "evaluate", give a judgement.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="eqname">F3 · Topic sentence</span>
+    <div class="eq"><span class="var v-topic">TS</span> = <span class="var v-plain">Composer</span> <span class="op">+</span> <span class="var v-plain">verb</span> <span class="op">+</span> <span class="var v-plain">sub-argument (uses the question's keyword)</span> <span class="op">+</span> <span class="var v-plain">so that / to suggest…</span></div>
+    <p class="small">Test: if a marker read <i>only</i> your topic sentences, would they get your whole argument? They should.</p>
+  </div>
+
+  <div class="card">
+    <span class="eqname">F4 · The analysis atom (repeat 3× per paragraph)</span>
+    <div class="eq"><span class="var v-evidence">Quote</span> <span class="op">×</span> <span class="var v-evidence">Technique</span> <span class="op">→</span> <span class="var v-analysis">Effect on reader</span> <span class="op">→</span> <span class="var v-analysis">Idea it builds</span></div>
+    <p class="small">Read it like a function: input a quote, name the technique, output what it <i>does</i> to the reader and what <i>idea</i> that creates. Naming a technique with no effect scores almost nothing. "Technique spotting" is the most common Band 4 habit.</p>
+    <div class="grid2">
+      <div class="why no"><b>✗ Spotted, not analysed</b><br>"Lawson uses repetition in 'Bush all round—bush with no horizon'."</div>
+      <div class="why ok"><b>✓ Full atom</b><br>"The repetition in 'Bush all round—bush with no horizon' <span class="muted">[evidence + technique]</span> traps the reader in the same unbroken view <span class="muted">[effect]</span>, the absent horizon becoming a metaphor for a life without prospect <span class="muted">[idea]</span>."</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="eqname">F5 · Body paragraph (~280 words)</span>
+    <div class="eq"><span class="var v-topic">BP</span> = <span class="var v-topic">TS</span> <span class="op">+</span> <span class="var v-evidence">Atom₁</span> <span class="op">+</span> <span class="var v-evidence">Atom₂</span> <span class="op">+</span> <span class="var v-evidence">Atom₃</span> <span class="op">+</span> <span class="var v-context">Context woven in</span> <span class="op">+</span> <span class="var v-link">Link</span></div>
+    <ul class="clean small">
+      <li><b>Escalate:</b> Atom₁ = a word or phrase. Atom₂ = a scene or image. Atom₃ = structure, form or a motif across the whole text.</li>
+      <li><b>Each quote proves a different slice</b> of the topic sentence. Three quotes saying the same thing = one quote's worth of marks.</li>
+      <li><b>Context</b> goes inside a sentence of analysis: "Writing amid X, Lawson…" not a separate history lesson.</li>
+      <li><b>Link:</b> one evaluative sentence answering the question again, in light of what you just proved.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <span class="eqname">F6 · Conclusion (~100 words)</span>
+    <div class="eq"><span class="var v-link">Concl</span> = <span class="var v-thesis">Thesis, reworded</span> <span class="op">+</span> <span class="var v-topic">A + B + C compressed into 1 sentence</span> <span class="op">+</span> <span class="var v-link">So what? (why it matters now)</span></div>
+    <p class="small">No new evidence. Never "In conclusion, I have shown". The "so what" is your last impression; make it a genuine thought about why the text still matters.</p>
+  </div>
+
+  <div class="card">
+    <span class="eqname">F7 · Planning (the 5 minutes that decide your mark)</span>
+    <div class="eq">Plan = <span class="var v-plain">Decode Q</span> → <span class="var v-thesis">Thesis</span> → <span class="var v-topic">A, B, C</span> → <span class="var v-evidence">3 quotes each</span> → <span class="var v-context">1 context hook each</span></div>
+    <p class="small">Draw it as a mind map. Here's the plan for the model essay in section 06:</p>
+    <div class="diagram">
+      <svg viewBox="0 0 860 380" role="img" aria-label="Mind map plan with the thesis in the centre and three branches">
+        <g stroke="var(--line)" stroke-width="2" fill="none">
+          <path d="M430 190 L170 80"/><path d="M430 190 L690 80"/><path d="M430 190 L430 320"/>
+          <path d="M170 80 L60 30"/><path d="M170 80 L60 130"/><path d="M690 80 L800 30"/><path d="M690 80 L800 130"/><path d="M430 320 L250 350"/><path d="M430 320 L610 350"/>
+        </g>
+        <rect x="300" y="150" width="260" height="80" rx="14" fill="var(--b-thesis)" stroke="var(--c-thesis)"/>
+        <text x="430" y="178" text-anchor="middle" font-weight="700" font-size="14">THESIS</text>
+        <text x="430" y="198" text-anchor="middle" font-size="12">endurance is paradoxical: survival</text>
+        <text x="430" y="215" text-anchor="middle" font-size="12">stoicism erodes the self it protects</text>
+        <rect x="95" y="55" width="150" height="50" rx="10" fill="var(--b-topic)" stroke="var(--c-topic)"/>
+        <text x="170" y="77" text-anchor="middle" font-weight="700" font-size="13">A · Landscape</text>
+        <text x="170" y="95" text-anchor="middle" font-size="11">bush demands + denies</text>
+        <rect x="615" y="55" width="150" height="50" rx="10" fill="var(--b-topic)" stroke="var(--c-topic)"/>
+        <text x="690" y="77" text-anchor="middle" font-weight="700" font-size="13">B · Narrative voice</text>
+        <text x="690" y="95" text-anchor="middle" font-size="11">stoicism hides loss</text>
+        <rect x="355" y="295" width="150" height="50" rx="10" fill="var(--b-topic)" stroke="var(--c-topic)"/>
+        <text x="430" y="317" text-anchor="middle" font-weight="700" font-size="13">C · Ending</text>
+        <text x="430" y="335" text-anchor="middle" font-size="11">hardship inherited</text>
+        <text x="10" y="25" font-size="11" fill="var(--c-evidence)">"Bush all round—bush with no horizon"</text>
+        <text x="10" y="150" font-size="11" fill="var(--c-context)">vs Paterson's romantic bush, 1892</text>
+        <text x="850" y="25" text-anchor="end" font-size="11" fill="var(--c-evidence)">"castles in the air … long been dead"</text>
+        <text x="850" y="150" text-anchor="end" font-size="11" fill="var(--c-context)">Louisa Lawson, feminist publisher</text>
+        <text x="250" y="372" text-anchor="middle" font-size="11" fill="var(--c-evidence)">"worn-out breast"</text>
+        <text x="610" y="372" text-anchor="middle" font-size="11" fill="var(--c-evidence)">"blarst me if I do!"</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="eqname">F8 · Rough mark model (my heuristic, for self-checking)</span>
+    <div class="eq">Mark ≈ <span class="var v-thesis">Q·5</span> + <span class="var v-analysis">A·6</span> + <span class="var v-evidence">E·3</span> + <span class="var v-context">C·3</span> + <span class="var v-link">X·3</span> &nbsp;<span class="muted">// each factor scored 0–1</span></div>
+    <ul class="clean small">
+      <li><b>Q</b> question + thesis: answers this exact question, sustained to the end (5)</li>
+      <li><b>A</b> analysis depth: effect + idea every time, never retell (6)</li>
+      <li><b>E</b> evidence: well-chosen, varied, integrated (3)</li>
+      <li><b>C</b> context and form: woven into analysis (3)</li>
+      <li><b>X</b> expression: clear, controlled, confident voice (3)</li>
+    </ul>
+    <p class="note">NESA marks holistically, not by adding parts. Use this to find your weakest factor, then drill that one.</p>
+  </div>
+
+  <div class="card">
+    <h3>Word bank: swap these in</h3>
+    <div class="grid2" id="wordbank"></div>
+  </div>
+</section>
+
+<!-- 04 LADDER -->
+<section class="view" id="v-ladder">
+  <div class="card">
+    <h2>The analysis ladder</h2>
+    <p class="readable">This is the single most useful idea on this page. There are six levels of talking about one quote. Most students stop at level 1 or 2. Band 6 sentences live at 4 and 5. Tap each rung to see the <i>same quote</i> analysed at that level.</p>
+    <p class="qquote">"Bush all round—bush with no horizon, for the country is flat." · Henry Lawson, "The Drover's Wife" (1892)</p>
+  </div>
+  <div class="grid2">
+    <div class="ladder" id="ladderRungs"></div>
+    <div class="ladder-out" id="ladderOut" aria-live="polite"></div>
+  </div>
+  <div class="callout">Rule of thumb: every quote you use must reach <b>at least level 3</b>. Each paragraph should touch <b>level 4</b> (context) once and end on <b>level 5</b> (your judgement).</div>
+</section>
+
+<!-- 05 WATCH -->
+<section class="view" id="v-watch">
+  <div class="card">
+    <h2>Watch it get built</h2>
+    <p class="readable">Animated walkthroughs. Press play and watch a thesis, a paragraph and a full exam plan get assembled piece by piece, with the formula in colour.</p>
+    <div class="eps" id="eps"></div>
+  </div>
+  <div class="player">
+    <div class="screen" id="screen" aria-live="polite"></div>
+    <div class="controls">
+      <button class="btn" id="vPrev" aria-label="Previous step">◀</button>
+      <button class="btn primary" id="vPlay">▶ Play</button>
+      <button class="btn" id="vNext" aria-label="Next step">▶▶</button>
+      <div class="prog"><span id="vBar"></span></div>
+      <span class="mono small" id="vCount">1 / 1</span>
+      <div class="seg" role="group" aria-label="Speed">
+        <button data-speed="1.4" aria-pressed="false">Slow</button>
+        <button data-speed="1" aria-pressed="true">Normal</button>
+        <button data-speed="0.6" aria-pressed="false">Fast</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 MODEL -->
+<section class="view" id="v-model">
+  <div class="card">
+    <h2>Model essay, colour-coded</h2>
+    <p class="readable">A full Common Module essay written to the 17–20 criteria, using the formulas exactly. Turn colours on to see every part. Read it once for the argument, then once just looking at the colours: notice how regular the pattern is.</p>
+    <div class="row">
+      <div class="seg" role="group" aria-label="Colour coding">
+        <button id="colOn" aria-pressed="true">Colours on</button>
+        <button id="colOff" aria-pressed="false">Plain</button>
+      </div>
+      <span class="small muted" id="essayWords"></span>
+    </div>
+    <div class="legend small">
+      <span class="var v-thesis">Thesis</span><span class="var v-topic">Topic / roadmap</span><span class="var v-evidence">Evidence + technique</span><span class="var v-analysis">Effect + idea</span><span class="var v-context">Context</span><span class="var v-link">Link</span>
+    </div>
+    <p class="note">This is an original model I wrote for you; NESA doesn't publish real 20/20 scripts. Check every quote against your own edition of the prescribed collection (The Penguin Henry Lawson Short Stories) before using any of it.</p>
+  </div>
+  <div class="card">
+    <p class="question">Texts reveal the contradictions in how individuals respond to hardship. To what extent is this true of your prescribed text?</p>
+    <div class="essay colour" id="essay">
+      <span class="plabel">Introduction · F2</span>
+      <p><span data-part="thesis">Henry Lawson's 1892 short story "The Drover's Wife" reveals that human endurance is fundamentally paradoxical: the same stoicism that allows an isolated individual to survive hardship also quietly erodes the self it protects.</span> <span data-part="context">Writing for The Bulletin during the economic depression of the 1890s, when the nationalist "bush legend" celebrated the self-reliant bushman, Lawson redirects that myth towards a woman whose resilience is both heroic and costly.</span> <span data-part="topic">Through his oppressive representation of the landscape, his restrained narrative voice and the story's ambivalent resolution, Lawson invites readers to admire his protagonist's strength while recognising it as a symptom of deprivation.</span> <span data-part="thesis">The statement is therefore largely true, as the text exposes contradiction as the price of surviving a world that offers no alternatives.</span></p>
+
+      <span class="plabel">Body paragraph 1 · Sub-argument A</span>
+      <p><span data-part="topic">Lawson first establishes that the bush provokes a contradictory response, since the environment that demands resilience simultaneously denies the protagonist any sense of a future.</span> <span data-part="evidence">The story opens with an inventory of crude materials, "round timber, slabs, and stringy-bark", the list and present tense constructing a home that is functional yet emotionally bare.</span> <span data-part="analysis">This flat, documentary style positions the reader as an observer of a life reduced to survival.</span> <span data-part="evidence">The repetition in "Bush all round—bush with no horizon" intensifies this effect,</span> <span data-part="analysis">trapping the reader in the same unbroken view, the absent horizon becoming a metaphor for a life without prospect. Endurance here is not chosen; it is imposed by a space that offers nowhere to go.</span> <span data-part="evidence">The precise measurement "Nineteen miles to the nearest sign of civilization" quantifies her isolation, while the bathos of civilisation being merely "a shanty"</span> <span data-part="analysis">deflates any romantic notion of the bush.</span> <span data-part="context">Where Banjo Paterson's contemporaneous verse imagined the bush as a site of freedom and masculine adventure, Lawson's realism exposes its cost to those left behind.</span> <span data-part="link">The landscape thus makes the drover's wife's resilience both necessary and imprisoning, revealing the first contradiction in her experience of hardship.</span></p>
+
+      <span class="plabel">Body paragraph 2 · Sub-argument B</span>
+      <p><span data-part="topic">Lawson deepens this paradox through a restrained narrative voice that presents the protagonist's stoicism as admirable while hinting at the emotional losses it conceals.</span> <span data-part="evidence">The understated declarative "She is used to being left alone" normalises abandonment,</span> <span data-part="analysis">and the passive "left" quietly assigns responsibility to the absent husband even as the narrator refuses to judge him outright.</span> <span data-part="evidence">This tension surfaces again in the concession "He is careless, but a good enough husband",</span> <span data-part="analysis">where the conjunction "but" enacts her habit of minimising neglect, a coping mechanism that protects her by lowering her expectations.</span> <span data-part="evidence">Most poignantly, the clichéd idiom "castles in the air" collapses into the stark finality of "long been dead",</span> <span data-part="analysis">the funereal diction suggesting that endurance has required the death of her imagination. When the narrator exclaims "Heaven help her!" at her pleasure in fashion-plates, the outburst of pity invites readers to feel what she cannot afford to.</span> <span data-part="context">Raised by Louisa Lawson, a feminist publisher, Lawson gives voice to the domestic labour that the masculine bush legend erased.</span> <span data-part="link">Her stoicism is thus revealed as self-protection that simultaneously diminishes her, a contradiction the reader recognises even when she does not.</span></p>
+
+      <span class="plabel">Body paragraph 3 · Sub-argument C (biggest idea: structure)</span>
+      <p><span data-part="topic">Finally, Lawson's ambivalent resolution suggests that the contradictions of endurance are passed between generations, so that survival becomes both a triumph and an inheritance of hardship.</span> <span data-part="evidence">The night-long vigil against the snake frames the story as a test of endurance, and its episodic flashbacks, in which she "fought a flood" among other trials,</span> <span data-part="analysis">accumulate to present her life as a cycle of battles rather than a narrative of progress.</span> <span data-part="evidence">When the snake is finally killed, the climax dissolves into tenderness rather than celebration as "she hugs him to her worn-out breast";</span> <span data-part="analysis">the compound adjective "worn-out" reminds readers that her body has absorbed the cost of every victory.</span> <span data-part="evidence">Tommy's vow, "Mother, I won't never go drovin'; blarst me if I do!", is both comic and ironic:</span> <span data-part="analysis">his vernacular loyalty rejects his father's absence, yet signals that he is already being shaped by the same harsh code. The closing image of "sickly daylight" offers dawn without renewal, an unsettling closure that withholds catharsis.</span> <span data-part="link">Lawson thus honours the protagonist's endurance while refusing to pretend it has set her free.</span></p>
+
+      <span class="plabel">Conclusion · F6</span>
+      <p><span data-part="thesis">Ultimately, "The Drover's Wife" demonstrates that human responses to hardship are rarely simple.</span> <span data-part="topic">Through a hostile landscape, a restrained narrative voice and an unresolved ending, Lawson portrays resilience as at once his protagonist's greatest strength and the measure of what she has lost.</span> <span data-part="link">In doing so, he unsettles the celebratory bush mythology of his era and leaves modern readers with a sharper question: whether endurance should simply be admired, or whether the conditions that demand it should be changed.</span></p>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Same quote, two bands</h3>
+    <div class="grid2">
+      <div class="why no"><b>Band 3–4 version</b><br><br>"In The Drover's Wife, Lawson uses repetition in 'Bush all round—bush with no horizon' to show that the bush is big. This shows that she is lonely. This relates to human experiences because lots of people feel lonely."
+        <ul class="clean small" style="margin-top:10px">
+          <li>"shows" twice, vague verbs</li>
+          <li>technique named, effect barely explained</li>
+          <li>idea is obvious ("lonely"), no tension</li>
+          <li>link to the question is generic</li>
+        </ul>
+      </div>
+      <div class="why ok"><b>Band 6 version</b><br><br>"The repetition in 'Bush all round—bush with no horizon' traps the reader in the same unbroken view, the absent horizon becoming a metaphor for a life without prospect. Endurance here is not chosen; it is imposed by a space that offers nowhere to go."
+        <ul class="clean small" style="margin-top:10px">
+          <li>effect on the reader ("traps the reader")</li>
+          <li>a second layer: horizon → metaphor for future</li>
+          <li>idea tied to the question's keyword (endurance / hardship)</li>
+          <li>a judgement with tension ("not chosen; imposed")</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 MODULES -->
+<section class="view" id="v-modules">
+  <div class="card">
+    <h2>How the formula changes per module</h2>
+    <p class="readable">Same engine, different fuel. The skeleton (F0–F6) never changes. What each module adds is one or two extra variables the marker is hunting for.</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <span class="eqname">Paper 1 · Section II</span>
+      <h3>Texts and human experiences</h3>
+      <div class="eq">+ <span class="var v-analysis">individual ↔ collective</span> + <span class="var v-analysis">emotions / qualities</span> + <span class="var v-analysis">paradox, agency vs conformity</span></div>
+      <ul class="clean small">
+        <li>The syllabus asks how texts represent identity, acceptance and growth, the tension between agency and conformity, and paradoxes of motivation and behaviour. Build your thesis around one of these.</li>
+        <li>Better 2025 responses showed how the text enriched the student's <i>own</i> understanding. End paragraphs with a personal reflection.</li>
+        <li>The question may include a stimulus. Use its words in your thesis.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="eqname">Paper 2 · Section I</span>
+      <h3>Module A: Textual conversations</h3>
+      <div class="eq">+ <span class="var v-context">Context₁ vs Context₂</span> + <span class="var v-analysis">resonance (echo)</span> + <span class="var v-analysis">dissonance (clash)</span> + <span class="var v-analysis">how text₂ reframes text₁</span></div>
+      <ul class="clean small">
+        <li><b>Integrated paragraphs:</b> each paragraph discusses <i>both</i> texts on one idea. Roughly half the evidence from each.</li>
+        <li>Paragraph formula: TS (idea across both) → Text 1 atoms → pivot word ("Where…", "Conversely…", "Extending this…") → Text 2 atoms → evaluate the conversation.</li>
+        <li>Explain <i>why</i> they differ: different contexts, values and forms.</li>
+        <li>Use the module's own language: textual conversation, resonate, reframe, reimagine.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="eqname">Paper 2 · Section II</span>
+      <h3>Module B: Critical study of literature</h3>
+      <div class="eq">+ <span class="var v-analysis">whole text</span> + <span class="var v-analysis">construction (form, style, structure)</span> + <span class="var v-thesis">your informed judgement of its value</span> + <span class="var v-context">critics (optional)</span></div>
+      <ul class="clean small">
+        <li>Personal voice is the differentiator: "For me, the play's enduring power lies in…" written formally.</li>
+        <li>Draw evidence from across the whole text, beginning to end. Show the text's arc.</li>
+        <li>If there's an extract, weave it into every paragraph, not just one.</li>
+        <li>Evaluate why the text is valued: its artistry, its distinctive qualities.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="eqname">Paper 2 · Section III</span>
+      <h3>Module C: The craft of writing</h3>
+      <div class="eq">Part (a): <span class="var v-plain">your own piece</span> &nbsp; Part (b): <span class="var v-thesis">Intent</span> → <span class="var v-evidence">Choice</span> → <span class="var v-evidence">Quote from your piece</span> → <span class="var v-analysis">Effect</span></div>
+      <ul class="clean small">
+        <li>Not an essay, but the reflection (part b) uses the same atom formula, applied to your own writing.</li>
+        <li>Write in the exact form the question asks for, and make the stimulus the core of the piece.</li>
+        <li>Practise 3–4 flexible pieces you can adapt, rather than one memorised story.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 08 DRILLS -->
+<section class="view" id="v-drills">
+  <div class="card">
+    <h2>Drills</h2>
+    <p class="readable">Short, repeatable rounds. Wrong answers come back at the end of the round until you get them right. Aim for 2–3 rounds a day; it takes about 5 minutes.</p>
+    <div class="drillpick" id="drillPick"></div>
+  </div>
+  <div class="card" id="drillStage" hidden></div>
+</section>
+
+<!-- 09 WRITE -->
+<section class="view" id="v-write">
+  <div class="card">
+    <h2>Write + get marked</h2>
+    <p class="readable">Timed practice. Pick a sprint, write, then run the instant self-audit and, if it's available on your device, ask Claude to mark it against the NESA criteria. Your draft is kept on this device.</p>
+    <div class="grid2">
+      <div class="field"><label for="wModule">Module</label>
+        <select id="wModule">
+          <option>Texts and human experiences (Common Module)</option>
+          <option>Textual conversations (Module A)</option>
+          <option>Critical study of literature (Module B)</option>
+        </select></div>
+      <div class="field"><label for="wText">Your text(s)</label><input type="text" id="wText" placeholder="e.g. Henry Lawson, The Drover's Wife"></div>
+    </div>
+    <div class="field"><label for="wQ">Question</label>
+      <div class="row"><input type="text" id="wQ" style="flex:1 1 300px"><button class="btn" id="wNewQ">Random question</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div class="seg" role="group" aria-label="Sprint length">
+        <button data-min="5" aria-pressed="false">Thesis · 5 min</button>
+        <button data-min="12" aria-pressed="true">Paragraph · 12 min</button>
+        <button data-min="40" aria-pressed="false">Full essay · 40 min</button>
+      </div>
+      <div class="row"><span class="timer" id="wTimer">12:00</span><button class="btn primary" id="wStart">Start</button><button class="btn" id="wReset">Reset</button></div>
+    </div>
+    <div class="field"><label for="wBox">Your writing</label><textarea id="wBox" placeholder="Start with your thesis…"></textarea></div>
+    <div class="meter">
+      <div><span class="small muted">Words</span><b id="mWords">0</b></div>
+      <div><span class="small muted">Words / min</span><b id="mWpm">–</b></div>
+      <div><span class="small muted">Quotes</span><b id="mQuotes">0</b></div>
+      <div><span class="small muted">Paragraphs</span><b id="mParas">0</b></div>
+    </div>
+    <div class="row"><button class="btn" id="wAudit">Run self-audit</button><button class="btn primary" id="wAI" hidden>Mark it with Claude</button><span class="small muted" id="wAIstate">Claude marking appears here when opened on claude.ai.</span></div>
+  </div>
+  <div class="card" id="auditCard" hidden><h3>Self-audit</h3><ul class="clean audit" id="auditList"></ul></div>
+  <div class="card" id="aiCard" hidden><h3>Marker feedback</h3><div id="aiOut" aria-live="polite"></div></div>
+</section>
+
+<!-- 10 PLAN -->
+<section class="view" id="v-plan">
+  <div class="card">
+    <h2>Training plan: now → HSC 2027</h2>
+    <p class="readable">Like maths: you don't get good at integration by reading worked examples, you get good by doing 200 of them. Same here. Small daily reps beat one huge essay a fortnight.</p>
+  </div>
+  <div class="card">
+    <h3>Daily session (20 min)</h3>
+    <div class="eq">Day = <span class="var v-plain">5 min drills</span> + <span class="var v-plain">12 min paragraph sprint</span> + <span class="var v-plain">3 min self-audit</span></div>
+    <p class="small">Pick one quote from a text you're studying and write one full paragraph using F5. Rotate modules each day.</p>
+  </div>
+  <div class="card">
+    <h3>Phases</h3>
+    <div class="tablewrap"><table class="plan-table">
+      <thead><tr><th>When</th><th>Goal</th><th>Weekly targets</th></tr></thead>
+      <tbody>
+        <tr><td>Nov–Dec 2026</td><td><b>Mechanics.</b> Make F1–F6 automatic.</td><td>5 daily sessions · 1 thesis drill per day · build a quote bank (15 quotes per text, each with technique + effect + idea)</td></tr>
+        <tr><td>Jan–Mar 2027</td><td><b>Full essays.</b> One per module, then repeat.</td><td>1 timed 40-min essay · 3 paragraph sprints · get one essay marked by your teacher</td></tr>
+        <tr><td>Apr–Jul 2027</td><td><b>Adaptability.</b> Unseen questions, fast plans.</td><td>3 five-minute plans on random questions · 1 timed essay · rewrite your weakest paragraph from feedback</td></tr>
+        <tr><td>Aug–Oct 2027</td><td><b>Exam simulation.</b> Trials and HSC.</td><td>1 full paper under exam timing · 2 timed essays · keep daily drills going</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <h3>Build a quote bank (the most useful thing you can make)</h3>
+    <div class="eq">Quote card = <span class="var v-evidence">"quote"</span> + <span class="var v-evidence">technique</span> + <span class="var v-analysis">effect</span> + <span class="var v-analysis">idea (2–3 tags)</span> + <span class="var v-context">context hook</span></div>
+    <p class="small">Tag each quote with ideas (e.g. endurance, isolation, gender). In the exam, pick the tags that match the question and the quotes come with them. This is how top students adapt to any question without memorising an essay.</p>
+  </div>
+  <div class="callout warn"><b>Don't memorise one essay and hope.</b> 2025 marker feedback explicitly warns against reproducing a prepared response. Memorise <i>quote cards and paragraphs</i>, then assemble to fit the question.</div>
+</section>
+
+<!-- 11 TEXTS -->
+<section class="view" id="v-texts">
+  <div class="card">
+    <h2>Prescribed texts for the 2027 HSC</h2>
+    <p class="readable">From the NSW Curriculum site (prescriptions 2027–2030). Your school picks one option per focus area. Check with your teacher which ones Reddam is doing, then build your quote banks for those.</p>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Texts and human experiences</h3><ul class="clean small">
+      <li>Jessica Au, <i>Cold Enough for Snow</i></li><li>David Malouf, <i>An Imaginary Life</i></li><li>Henry Lawson, short stories ("The Drover's Wife", "The Union Buries Its Dead", "Shooting the Moon", "Our Pipes", "The Loaded Dog")</li><li>Rosemary Dobson, selected poems</li><li>Gwen Harwood, <i>Selected Poems</i></li><li>Samuel Wagan Watson, <i>Love Poems and Death Threats</i></li><li>Richard Flanagan, <i>Question 7</i></li><li>Michael Gow, <i>Away</i></li><li>Rachel Perkins, <i>One Night the Moon</i></li></ul></div>
+    <div class="card"><h3>Module A: Textual conversations</h3><ul class="clean small">
+      <li>Baynton, <i>Bush Studies</i> + Cobby Eckermann, <i>Inside My Mother</i></li><li>Blake, poems + Tokarczuk, <i>Drive Your Plow Over the Bones of the Dead</i></li><li>Keats, poems + Campion, <i>Bright Star</i></li><li>Shakespeare, <i>Hamlet</i> + Dickinson, poems</li><li>Shakespeare, <i>Julius Caesar</i> + Machiavelli, <i>The Prince</i></li><li>Woolf, <i>Mrs Dalloway</i> + Daldry, <i>The Hours</i></li></ul></div>
+    <div class="card"><h3>Module B: Critical study of literature</h3><ul class="clean small">
+      <li>Jane Austen, <i>Pride and Prejudice</i></li><li>Michael Ondaatje, <i>Warlight</i></li><li>Louise Glück, <i>Poems</i></li><li>W. B. Yeats, poems selected by Seamus Heaney</li><li>Shakespeare, <i>Othello</i></li><li>Shakespeare, <i>King Henry IV, Part 1</i></li></ul></div>
+    <div class="card"><h3>Module C: The craft of writing</h3><p class="small">Short prescribed texts used as models for your own writing. Your teacher will choose them; the skill being tested is your writing, so the drills and Module C formula still apply.</p></div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="sources"><b>Sources:</b>
+    <a href="https://curriculum.nsw.edu.au/learning-areas/english/english-advanced-11-12-2024/assessment/hsc-examinations">NESA exam specifications</a> ·
+    <a href="https://curriculum.nsw.edu.au/learning-areas/english/english-advanced-11-12-2024/overview/course">Course structure</a> ·
+    <a href="https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/english-advanced/2025">2025 HSC marking feedback</a> ·
+    <a href="https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/english-advanced/2024">2024 HSC exam pack</a> ·
+    <a href="https://education.nsw.gov.au/teaching-and-learning/curriculum/english/planning-programming-and-assessing-english-11-12/english-advanced">NSW DoE: implementation timeline</a>
+  </div>
+  <div>v1.0.1 (standalone) · Progress and drafts are saved in this browser only. Claude marking only works in the claude.ai version; the self-audit works everywhere.</div>
+</footer>
+
+<script>
+(function(){
+"use strict";
+var VERSION = "1.0.1";
+
+/* ---------- storage ---------- */
+var KEY = "hsc-essay-engine-v1";
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+var S = load();
+S.days = S.days || {}; S.total = S.total||0; S.right = S.right||0; S.best = S.best||{}; S.draft = S.draft||"";
+function todayKey(d){ d = d||new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+function rep(correct){
+  var k = todayKey(); S.days[k] = (S.days[k]||0)+1; S.total++; if(correct) S.right++; save(); renderStats();
+}
+function streak(){
+  var n=0, d=new Date();
+  if(!S.days[todayKey(d)]) d.setDate(d.getDate()-1);
+  while(S.days[todayKey(d)]){ n++; d.setDate(d.getDate()-1); }
+  return n;
+}
+function renderStats(){
+  document.getElementById("st-today").textContent = S.days[todayKey()]||0;
+  document.getElementById("st-streak").textContent = streak();
+  document.getElementById("st-total").textContent = S.total;
+  document.getElementById("st-acc").textContent = S.total ? Math.round(100*S.right/S.total)+"%" : "–";
+}
+renderStats();
+
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+
+/* ---------- routing ---------- */
+var VIEWS = ["start","rubric","formulas","ladder","watch","model","modules","drills","write","plan","texts"];
+function route(){
+  var h = (location.hash||"").replace("#","");
+  if(VIEWS.indexOf(h)<0) h="start";
+  VIEWS.forEach(function(v){ document.getElementById("v-"+v).classList.toggle("active", v===h); });
+  document.querySelectorAll("#tabs a").forEach(function(a){
+    if(a.getAttribute("href")==="#"+h){ a.setAttribute("aria-current","page"); try{ a.scrollIntoView({block:"nearest",inline:"center"}); }catch(e){} }
+    else a.removeAttribute("aria-current");
+  });
+  if(h!=="watch") stopVideo();
+}
+window.addEventListener("hashchange", function(){ route(); window.scrollTo(0,0); });
+route();
+
+/* ---------- word bank ---------- */
+var BANK = [
+  {t:"Instead of \"shows\"", items:["reveals","illuminates","exposes","interrogates","dramatises","subverts","critiques","reinforces","foregrounds","juxtaposes","satirises","elevates"]},
+  {t:"Evaluating (your judgement)", items:["Ultimately,","Crucially,","Most poignantly,","This is significant because","In doing so,","Thus,","This ultimately suggests"]},
+  {t:"Comparing (Module A)", items:["Where X…, Y…","Similarly,","Conversely,","Extending this concern,","Whereas","In dialogue with","Both composers…, yet"]},
+  {t:"Effect on the reader", items:["positions the reader to","invites the audience to","compels us to","unsettles","evokes","heightens","distances the reader from"]}
+];
+document.getElementById("wordbank").innerHTML = BANK.map(function(b){
+  return '<div><h4>'+esc(b.t)+'</h4><div style="margin-top:6px">'+b.items.map(function(w){return '<span class="tok" style="cursor:default">'+esc(w)+'</span>';}).join("")+'</div></div>';
+}).join("");
+
+/* ---------- ladder ---------- */
+var RUNGS = [
+  {lv:"L0", name:"Retell", band:"Band 1–2", txt:"The story says there is bush all around her house and the land is flat.", why:"This just repeats what happens. Markers call this recount or paraphrase. Zero analysis."},
+  {lv:"L1", name:"Name the technique", band:"Band 3", txt:"Lawson uses repetition in \"Bush all round—bush with no horizon\".", why:"Correct, but so what? Naming a technique is not analysing it."},
+  {lv:"L2", name:"+ Effect on reader", band:"Band 4", txt:"The repetition in \"Bush all round—bush with no horizon\" emphasises how vast and empty the bush is, making the reader feel its monotony.", why:"Now we know what it does to the reader. Most Band 4 essays stop here."},
+  {lv:"L3", name:"+ Idea it builds", band:"Band 5", txt:"The repetition in \"Bush all round—bush with no horizon\" traps the reader in the same unbroken view, the absent horizon becoming a metaphor for a life without prospect.", why:"The effect now links to a big idea (no future). This is the minimum level for every quote."},
+  {lv:"L4", name:"+ Context / purpose", band:"Band 6", txt:"…a metaphor for a life without prospect. Where Paterson's contemporaneous verse romanticised the bush as freedom, Lawson's realism exposes its cost to those left behind.", why:"Now you explain WHY Lawson wrote it this way, using his world. Context is inside the analysis, not in a separate history paragraph."},
+  {lv:"L5", name:"+ Your judgement", band:"Band 6 high", txt:"…Endurance here is not chosen; it is imposed by a space that offers nowhere to go, making her resilience both necessary and imprisoning.", why:"Your evaluative voice answering the question. This is what \"insightful\" means: a conclusion the reader didn't have before."}
+];
+var ladderRungs = document.getElementById("ladderRungs");
+ladderRungs.innerHTML = RUNGS.map(function(r,i){
+  return '<button class="rung" data-i="'+i+'" aria-pressed="false"><span class="lv">'+r.lv+'</span><span><b>'+esc(r.name)+'</b></span><span class="pill'+(i>=4?' top':'')+'">'+r.band+'</span></button>';
+}).join("");
+function showRung(i){
+  ladderRungs.querySelectorAll(".rung").forEach(function(b){ b.setAttribute("aria-pressed", String(+b.dataset.i===i)); });
+  var r = RUNGS[i];
+  document.getElementById("ladderOut").innerHTML = '<div class="eqname">'+r.lv+' · '+esc(r.name)+'</div><p style="margin:8px 0 12px;font-size:1.05rem">'+esc(r.txt)+'</p><p class="small muted">'+esc(r.why)+'</p>';
+}
+ladderRungs.addEventListener("click", function(e){ var b=e.target.closest(".rung"); if(b) showRung(+b.dataset.i); });
+showRung(3);
+
+/* ---------- model essay ---------- */
+var essay = document.getElementById("essay");
+document.getElementById("colOn").onclick = function(){ essay.classList.add("colour"); this.setAttribute("aria-pressed","true"); document.getElementById("colOff").setAttribute("aria-pressed","false"); };
+document.getElementById("colOff").onclick = function(){ essay.classList.remove("colour"); this.setAttribute("aria-pressed","true"); document.getElementById("colOn").setAttribute("aria-pressed","false"); };
+(function(){ var w=0; essay.querySelectorAll("p").forEach(function(p){ w += p.textContent.trim().split(/\s+/).length; }); document.getElementById("essayWords").textContent = w+" words. Kept tight so the pattern is easy to see; in the exam, add a fourth piece of evidence per paragraph to reach ~1000."; })();
+
+/* ---------- video player ---------- */
+function V(cls, txt){ return '<span class="var v-'+cls+'">'+esc(txt)+'</span>'; }
+var EPISODES = [
+  {title:"Ep 1 · Build a thesis", frames:[
+    {cap:"Start with the question. Find the keyword.", parts:[["plain","Q: Texts reveal the contradictions in how individuals respond to hardship. To what extent…?"]], note:"Keyword = contradictions. Second keyword = hardship. Verb = to what extent (needs a judgement)."},
+    {cap:"Slot 1: composer + text", parts:[["thesis","Henry Lawson's 1892 short story \"The Drover's Wife\""]]},
+    {cap:"Slot 2: a precise verb (never \"shows\")", parts:[["thesis","Henry Lawson's 1892 short story \"The Drover's Wife\""],["thesis"," reveals that"]]},
+    {cap:"Slot 3: the idea, in the question's terms", parts:[["thesis","Henry Lawson's 1892 short story \"The Drover's Wife\" reveals that"],["thesis"," human endurance is fundamentally paradoxical"]], note:"\"Paradoxical\" = contradictions, rephrased. You're using the question's keyword without copying it."},
+    {cap:"Slot 4: the complication. This is where the marks are.", parts:[["thesis","Henry Lawson's 1892 short story \"The Drover's Wife\" reveals that human endurance is fundamentally paradoxical"],["thesis",": the same stoicism that allows an isolated individual to survive hardship also quietly erodes the self it protects."]], note:"Idea + tension = insight. Survive ↔ erode."},
+    {cap:"Answer the \"to what extent\"", parts:[["thesis","…erodes the self it protects."],["thesis"," The statement is therefore largely true…"]], note:"Done. Every paragraph now has to prove one piece of this sentence."}
+  ]},
+  {title:"Ep 2 · Build a paragraph", frames:[
+    {cap:"Topic sentence: sub-argument A, using the keyword", parts:[["topic","Lawson first establishes that the bush provokes a contradictory response, since the environment that demands resilience simultaneously denies the protagonist any sense of a future."]]},
+    {cap:"Atom 1 · evidence + technique (small: words)", parts:[["topic","Lawson first establishes…future."],["evidence"," The story opens with an inventory of crude materials, \"round timber, slabs, and stringy-bark\", the list and present tense"]]},
+    {cap:"Atom 1 · effect + idea", parts:[["topic","Lawson first establishes…future."],["evidence"," The story opens with … \"round timber, slabs, and stringy-bark\", the list and present tense"],["analysis"," constructing a home that is functional yet emotionally bare."]]},
+    {cap:"Atom 2 · bigger: an image", parts:[["topic","…"],["evidence"," The repetition in \"Bush all round—bush with no horizon\""],["analysis"," traps the reader in the same unbroken view, the absent horizon becoming a metaphor for a life without prospect."]]},
+    {cap:"Atom 3 · a detail that adds a new slice", parts:[["topic","…"],["evidence"," \"Nineteen miles to the nearest sign of civilization\" … merely \"a shanty\""],["analysis"," quantifies her isolation and deflates any romantic notion of the bush."]]},
+    {cap:"Weave in context (why Lawson wrote it this way)", parts:[["topic","…"],["context"," Where Banjo Paterson's contemporaneous verse imagined the bush as a site of freedom and masculine adventure, Lawson's realism exposes its cost to those left behind."]]},
+    {cap:"Link back to the question", parts:[["topic","…"],["link"," The landscape thus makes the drover's wife's resilience both necessary and imprisoning, revealing the first contradiction in her experience of hardship."]], note:"TS + 3 atoms + context + link = one Band 6 paragraph."}
+  ]},
+  {title:"Ep 3 · The 40-minute exam run", frames:[
+    {cap:"0:00–1:00 · Decode the question", parts:[["plain","Underline: the idea (keyword), the verb (evaluate / to what extent / how), any stimulus."]]},
+    {cap:"1:00–3:00 · Thesis", parts:[["thesis","Write the thesis in your plan, not your head. Idea + tension."]]},
+    {cap:"3:00–5:00 · Mind map A, B, C", parts:[["topic","Three sub-arguments"],["evidence"," + 3 quotes each from your quote bank"],["context"," + 1 context hook each"]]},
+    {cap:"5:00–9:00 · Introduction", parts:[["thesis","Thesis"],["context"," Context"],["topic"," Roadmap"],["thesis"," Extent"]]},
+    {cap:"9:00–34:00 · Three body paragraphs (~8 min each)", parts:[["topic","TS"],["evidence"," Atom × 3"],["context"," Context"],["link"," Link"]], note:"If a paragraph runs over 9 minutes, cut it and move on. A missing conclusion costs more."},
+    {cap:"34:00–37:00 · Conclusion", parts:[["link","Thesis reworded + A, B, C in one sentence + so what?"]]},
+    {cap:"37:00–40:00 · Check", parts:[["plain","Does every topic sentence use the keyword? Any \"shows\"? Any retelling? Fix the worst one."]]}
+  ]}
+];
+var vEp=0, vF=0, vTimer=null, vSpeed=1, vPlaying=false;
+var epsEl = document.getElementById("eps");
+epsEl.innerHTML = EPISODES.map(function(e,i){ return '<button class="btn" data-ep="'+i+'">'+esc(e.title)+'</button>'; }).join("");
+epsEl.addEventListener("click", function(e){ var b=e.target.closest("[data-ep]"); if(!b) return; vEp=+b.dataset.ep; vF=0; drawFrame(true); });
+function drawFrame(fresh){
+  var ep = EPISODES[vEp], f = ep.frames[vF];
+  epsEl.querySelectorAll("[data-ep]").forEach(function(b){ b.classList.toggle("primary", +b.dataset.ep===vEp); });
+  var html = f.parts.map(function(p,i){ var last = i===f.parts.length-1; var s = V(p[0],p[1]); return last ? '<span class="new">'+s+'</span>' : s; }).join(" ");
+  document.getElementById("screen").innerHTML = '<div class="eqname">'+esc(ep.title)+' · step '+(vF+1)+'</div><div class="cap">'+esc(f.cap)+'</div><div class="build">'+html+'</div>'+(f.note?'<div class="callout small">'+esc(f.note)+'</div>':'');
+  document.getElementById("vCount").textContent = (vF+1)+" / "+ep.frames.length;
+  document.getElementById("vBar").style.width = (100*(vF+1)/ep.frames.length)+"%";
+}
+function tick(){
+  var ep = EPISODES[vEp];
+  if(vF < ep.frames.length-1){ vF++; drawFrame(); vTimer = setTimeout(tick, 4200*vSpeed); }
+  else { stopVideo(); }
+}
+function playVideo(){ if(vPlaying) return; vPlaying=true; document.getElementById("vPlay").textContent="❚❚ Pause";
+  if(vF >= EPISODES[vEp].frames.length-1){ vF=0; drawFrame(); }
+  vTimer = setTimeout(tick, 4200*vSpeed); }
+function stopVideo(){ vPlaying=false; clearTimeout(vTimer); var b=document.getElementById("vPlay"); if(b) b.textContent="▶ Play"; }
+document.getElementById("vPlay").onclick = function(){ vPlaying ? stopVideo() : playVideo(); };
+document.getElementById("vNext").onclick = function(){ stopVideo(); if(vF<EPISODES[vEp].frames.length-1){ vF++; drawFrame(); } };
+document.getElementById("vPrev").onclick = function(){ stopVideo(); if(vF>0){ vF--; drawFrame(); } };
+document.querySelectorAll("[data-speed]").forEach(function(b){ b.onclick=function(){ vSpeed=+b.dataset.speed; document.querySelectorAll("[data-speed]").forEach(function(x){x.setAttribute("aria-pressed", String(x===b));}); }; });
+drawFrame();
+
+/* ---------- drills data ---------- */
+var PART_LABEL = {thesis:"Thesis", topic:"Topic sentence / roadmap", evidence:"Evidence + technique", analysis:"Effect + idea (analysis)", context:"Context", link:"Link back to question"};
+var PART_WHY = {
+  thesis:"It states the essay's overall argument (or restates it), answering the question directly.",
+  topic:"It names a sub-argument that the paragraph (or essay) will prove.",
+  evidence:"It introduces a quote or textual detail and names the technique.",
+  analysis:"It explains what the evidence does to the reader and what idea it builds.",
+  context:"It explains the composer's world (time, place, values) and why that shaped the text.",
+  link:"It ties the paragraph back to the question with an evaluative judgement."
+};
+function partItems(){
+  var out=[];
+  essay.querySelectorAll("[data-part]").forEach(function(s,i){
+    var p = s.dataset.part, txt = s.textContent.trim();
+    out.push({id:"part"+i, q:"Which part of the essay formula is this sentence?", quote:txt, options:Object.keys(PART_LABEL).map(function(k){return PART_LABEL[k];}), answer:PART_LABEL[p], why:PART_WHY[p]});
+  });
+  return out;
+}
+var TECH = [
+  {quote:"\"Beauty is truth, truth beauty\" (Keats, Ode on a Grecian Urn)", a:"Chiasmus", d:["Alliteration","Onomatopoeia","Hyperbole"], why:"Chiasmus reverses the order of terms (A-B, B-A), fusing the two ideas so they feel inseparable."},
+  {quote:"\"O, beware, my lord, of jealousy; / It is the green-eyed monster\" (Othello)", a:"Metaphor", d:["Simile","Oxymoron","Anaphora"], why:"Jealousy IS a monster (no 'like' or 'as'), turning an emotion into a predator that feeds on its victim."},
+  {quote:"\"Because I could not stop for Death – / He kindly stopped for me –\" (Dickinson)", a:"Personification", d:["Pathetic fallacy","Euphemism","Synecdoche"], why:"Death is given human courtesy ('kindly stopped'), recasting dying as a polite carriage ride."},
+  {quote:"\"Cowards die many times before their deaths; / The valiant never taste of death but once.\" (Julius Caesar)", a:"Antithesis", d:["Chiasmus","Tricolon","Rhetorical question"], why:"Opposites (cowards / valiant, many / once) are set side by side to sharpen the contrast."},
+  {quote:"\"Friends, Romans, countrymen, lend me your ears\" (Julius Caesar)", a:"Tricolon", d:["Antithesis","Apostrophe","Irony"], why:"A list of three builds rhythm and inclusiveness, widening Antony's audience step by step."},
+  {quote:"\"Frailty, thy name is woman!\" (Hamlet)", a:"Apostrophe", d:["Simile","Hyperbole","Alliteration"], why:"Hamlet addresses an abstract quality directly, as if it could hear him, exposing his bitterness."},
+  {quote:"\"I am not what I am.\" (Iago, Othello)", a:"Paradox", d:["Oxymoron","Metaphor","Euphemism"], why:"A statement that contradicts itself yet reveals a truth: Iago's whole identity is deception."},
+  {quote:"\"It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.\" (Pride and Prejudice)", a:"Irony", d:["Hyperbole","Personification","Aphorism used sincerely"], why:"The grand 'universal truth' is ironic: it is really the families who want the rich man, satirising the marriage market."},
+  {quote:"\"Hope is the thing with feathers / That perches in the soul\" (Dickinson)", a:"Extended metaphor", d:["Simile","Pathetic fallacy","Onomatopoeia"], why:"Hope is a bird, and the image is developed across the poem (perches, sings), so it's extended."},
+  {quote:"\"Tyger Tyger, burning bright, / In the forests of the night\" (Blake)", a:"Alliteration", d:["Assonance only","Onomatopoeia","Enjambment"], why:"The repeated 'b' and 'f' sounds create a hammering, incantatory rhythm suited to the forge imagery."},
+  {quote:"\"Something is rotten in the state of Denmark.\" (Hamlet)", a:"Metaphor", d:["Simile","Hyperbole","Euphemism"], why:"The state is a decaying body: corruption at the top spreads like rot."},
+  {quote:"\"Bush all round—bush with no horizon\" (Lawson)", a:"Repetition", d:["Simile","Personification","Onomatopoeia"], why:"Repeating 'bush' mirrors the monotony and the trapped, endless view."}
+];
+function techItems(){ return TECH.map(function(t,i){ return {id:"tech"+i, q:"Which technique is most clearly used here?", quote:t.quote, options:shuffle([t.a].concat(t.d)), answer:t.a, why:t.why}; }); }
+
+var WS = [
+  {a:"Lawson represents the drover's wife's resilience as a learned habit of self-erasure.", b:"Lawson shows that the drover's wife is strong.", why:"Precise verb + a conceptual idea with tension. 'Shows… strong' is vague and obvious."},
+  {a:"The night-long vigil frames the story as a test of endurance, each flashback adding another battle to a life without progress.", b:"Then the snake goes under the house and she waits all night for it to come out.", why:"The second retells plot. The first analyses what the structure does."},
+  {a:"The metaphor of the \"green-eyed monster\" renders jealousy a predatory force that consumes the person who harbours it.", b:"There is a metaphor in \"green-eyed monster\" which is effective.", why:"'Effective' says nothing. The first explains what the metaphor does and what idea it creates."},
+  {a:"Writing for The Bulletin amid 1890s nationalism, Lawson unsettles the bush legend by centring a woman's unseen labour.", b:"Lawson was born in 1867 in Grenfell. He wrote for The Bulletin. In the 1890s there was a depression.", why:"Context must be woven into analysis and explain WHY. The second is a disconnected history lesson."},
+  {a:"Henry Lawson's \"The Drover's Wife\" reveals that endurance is paradoxical, sustaining the individual while eroding her sense of self.", b:"Since the dawn of time, humans have faced many hard experiences in their lives.", why:"Open with your thesis. Generic openers waste the most important sentence of the essay."},
+  {a:"Ultimately, Lawson leaves readers questioning whether endurance should be admired or whether the conditions that demand it should be changed.", b:"In conclusion, I have shown three ways Lawson explores human experiences.", why:"A conclusion should leave a final insight, not announce what you did."},
+  {a:"For me, the tragedy's enduring power lies in Shakespeare's refusal to let Iago fully explain himself, a silence that unsettles any search for a simple cause of evil.", b:"I really liked Othello because it was interesting and had a lot of drama.", why:"Personal voice ≠ casual opinion. The first is a formal, informed judgement about the text's value."},
+  {a:"Where Hamlet's soliloquies voice death as an unanswerable question spoken aloud, Dickinson's dashes compress that same uncertainty into private, fractured contemplation.", b:"In Hamlet death is a big theme. In Dickinson's poems death is also a big theme.", why:"Module A needs integrated comparison: a pivot word ('Where…') and how each composer's form treats the idea differently."},
+  {a:"The compound adjective \"worn-out\" reminds readers that her body has absorbed the cost of every victory.", b:"The quote \"worn-out breast\" shows she is tired.", why:"Zoom in on one word and draw out a bigger idea. 'Shows she is tired' stays literal."},
+  {a:"Austen satirises the Regency marriage market through the ironic narrative voice of the opening line.", b:"Austen talks about marriage in the opening line of the novel.", why:"'Satirises' tells the marker exactly what Austen does and why. 'Talks about' is weak and vague."}
+];
+function wsItems(){ return WS.map(function(w,i){ return {id:"ws"+i, q:"Which sentence would score higher?", options:shuffle([w.a,w.b]), answer:w.a, why:w.why}; }); }
+
+var VERBS = [
+  {s:"Dickinson ____ Death as a courteous suitor, softening the terror of mortality.", a:"personifies", d:["shows","talks about","says"], why:"Name exactly what the composer does: she gives Death human qualities."},
+  {s:"Lawson ____ the masculine bush legend by placing a woman at its centre.", a:"subverts", d:["shows","describes","mentions"], why:"Subvert = undermine an expectation. That's the argument."},
+  {s:"Austen ____ the snobbery of Regency society through Lady Catherine's dialogue.", a:"satirises", d:["shows","explains","writes"], why:"Satire = mocking to criticise. More precise than 'shows'."},
+  {s:"Shakespeare ____ Othello's collapse through his increasingly fragmented verse.", a:"dramatises", d:["shows","says","tells us"], why:"It's a play: 'dramatises' points to form as well as content."},
+  {s:"The pairing of the two texts ____ how each era understood ambition differently.", a:"illuminates", d:["shows","is about","talks about"], why:"Illuminate = makes clear something hidden. Good for Module A."},
+  {s:"Through Iago's soliloquies, Shakespeare ____ the audience as complicit witnesses.", a:"positions", d:["shows","makes","has"], why:"'Positions the audience' is precise language about effect on the reader or audience."},
+  {s:"Woolf ____ Clarissa's inner life with the noise of post-war London.", a:"juxtaposes", d:["shows","puts","compares"], why:"Juxtapose = placing two things side by side for contrast."},
+  {s:"Machiavelli's pragmatism ____ the idealised view of virtuous rulers in his era.", a:"challenges", d:["shows","is about","says"], why:"An active verb that carries an argument."}
+];
+function verbItems(){ return VERBS.map(function(v,i){ return {id:"verb"+i, q:"Pick the most precise verb.", quote:v.s, options:shuffle([v.a].concat(v.d)), answer:v.a, why:v.why}; }); }
+
+var DECODE = [
+  {q:"To what extent does your prescribed text reveal the paradoxes of human behaviour?", keys:["To what extent","reveal","paradoxes","human behaviour"], why:"'To what extent' = give a judgement (fully / largely / partly). 'Paradoxes' = contradictions, needs tension in your thesis. 'Human behaviour' = actions and motives, not just feelings."},
+  {q:"Evaluate how the textual conversation between your prescribed texts reframes ideas about power.", keys:["Evaluate","textual conversation","reframes","power"], why:"'Evaluate' = judge how well or how much. 'Reframes' = the later text changes how we see the earlier one. 'Power' = your conceptual keyword."},
+  {q:"How does the composer's use of form shape your understanding of the text's enduring value?", keys:["How","form","shape","understanding","enduring value"], why:"'How' = explain methods. 'Form' must be central (play, poem, novel). 'Your understanding' = personal voice. 'Enduring value' = why it still matters."},
+  {q:"Explore how your prescribed text represents individual and collective experiences of resilience.", keys:["Explore","represents","individual","collective","resilience"], why:"Both 'individual' AND 'collective' must be covered, which is a classic trap. 'Represents' = how it's constructed, not just what happens."},
+  {q:"To what extent do the resonances between your texts outweigh their dissonances?", keys:["To what extent","resonances","outweigh","dissonances"], why:"You must cover both similarities and differences AND judge which matters more ('outweigh')."}
+];
+
+var ORDER = [
+  {title:"Body paragraph 1", parts:["Lawson first establishes that the bush provokes a contradictory response, since the environment that demands resilience simultaneously denies the protagonist any sense of a future.","The story opens with an inventory of crude materials, constructing a home that is functional yet emotionally bare.","The repetition in \"Bush all round—bush with no horizon\" traps the reader in the same unbroken view, the absent horizon becoming a metaphor for a life without prospect.","Where Banjo Paterson's contemporaneous verse imagined the bush as a site of freedom, Lawson's realism exposes its cost to those left behind.","The landscape thus makes the drover's wife's resilience both necessary and imprisoning."]},
+  {title:"Introduction", parts:["Henry Lawson's 1892 short story \"The Drover's Wife\" reveals that human endurance is fundamentally paradoxical.","Writing for The Bulletin during the 1890s depression, Lawson redirects the bush legend towards a woman whose resilience is both heroic and costly.","Through the landscape, a restrained narrative voice and an ambivalent ending, Lawson invites readers to admire his protagonist's strength while recognising it as a symptom of deprivation.","The statement is therefore largely true."]},
+  {title:"Rubric ladder (lowest → highest)", parts:["Attempts to describe","Describes some aspects","Evaluates soundly","Evaluates effectively","Evaluates skilfully and insightfully"]},
+  {title:"Analysis atom", parts:["Quote","Technique","Effect on the reader","Idea it builds","Link to context or the question"]}
+];
+
+var DRILLS = [
+  {id:"parts", t:"Spot the part", s:"Label sentences from the model essay", type:"mc", make:partItems},
+  {id:"ws", t:"Weak or strong?", s:"Pick the higher-band sentence", type:"mc", make:wsItems},
+  {id:"tech", t:"Name the technique", s:"Classic lines from 2027 texts", type:"mc", make:techItems},
+  {id:"verbs", t:"Upgrade the verb", s:"Kill the word \"shows\"", type:"mc", make:verbItems},
+  {id:"decode", t:"Decode the question", s:"Tap every keyword a marker checks", type:"decode"},
+  {id:"order", t:"Build in order", s:"Put sentences in formula order", type:"order"},
+  {id:"thesis", t:"Thesis machine", s:"Assemble a thesis slot by slot", type:"thesis"}
+];
+
+var pick = document.getElementById("drillPick"), stage = document.getElementById("drillStage");
+function renderPick(){
+  pick.innerHTML = DRILLS.map(function(d){
+    var b = S.best[d.id];
+    return '<button class="dcard" data-d="'+d.id+'"><span class="t">'+esc(d.t)+'</span><span class="s">'+esc(d.s)+'</span><span class="best">'+(b!=null?'Best: '+b+'%':'Not tried yet')+'</span></button>';
+  }).join("");
+}
+renderPick();
+pick.addEventListener("click", function(e){ var b=e.target.closest("[data-d]"); if(!b) return; startDrill(b.dataset.d); stage.scrollIntoView({behavior:"smooth", block:"start"}); });
+
+function finish(id, pct){
+  if(S.best[id]==null || pct>S.best[id]) S.best[id]=pct; save(); renderPick();
+}
+
+/* multiple choice round */
+function startDrill(id){
+  var d = DRILLS.filter(function(x){return x.id===id;})[0];
+  stage.hidden = false;
+  if(d.type==="mc") runMC(d);
+  else if(d.type==="decode") runDecode(d);
+  else if(d.type==="order") runOrder(d);
+  else runThesis(d);
+}
+function runMC(d){
+  var queue = shuffle(d.make()).slice(0,8), firstTry = queue.length, correct = 0, idx = 0, results = [];
+  function show(){
+    if(idx >= queue.length){
+      var pct = Math.round(100*correct/firstTry); finish(d.id,pct);
+      stage.innerHTML = '<h3>'+esc(d.t)+' · round done</h3><p class="mark-big">'+pct+'%</p><p class="muted">First-try accuracy. Missed items were repeated until you got them.</p><div class="row"><button class="btn primary" id="again">Another round</button><button class="btn" id="back">Choose another drill</button></div>';
+      stage.querySelector("#again").onclick=function(){ runMC(d); };
+      stage.querySelector("#back").onclick=function(){ stage.hidden=true; pick.scrollIntoView({behavior:"smooth"}); };
+      return;
+    }
+    var it = queue[idx];
+    var dots = queue.map(function(_,i){ return '<i class="'+(i<idx?(results[i]?'ok':'no'):(i===idx?'cur':''))+'"></i>'; }).join("");
+    stage.innerHTML = '<div class="row" style="justify-content:space-between"><h3>'+esc(d.t)+'</h3><span class="mono small">'+(idx+1)+' / '+queue.length+'</span></div><div class="dprog">'+dots+'</div><div class="qbox"><p class="qtext">'+esc(it.q)+'</p>'+(it.quote?'<p class="qquote">'+esc(it.quote)+'</p>':'')+'<div class="opts">'+it.options.map(function(o,i){return '<button class="opt" data-i="'+i+'">'+esc(o)+'</button>';}).join("")+'</div><div id="fb"></div></div>';
+    stage.querySelectorAll(".opt").forEach(function(btn){
+      btn.onclick = function(){
+        var chosen = it.options[+btn.dataset.i], ok = chosen===it.answer;
+        stage.querySelectorAll(".opt").forEach(function(b){ b.disabled=true; if(it.options[+b.dataset.i]===it.answer) b.classList.add("right"); });
+        if(!ok) btn.classList.add("wrong");
+        rep(ok);
+        if(!it.retry){ results[idx]=ok; if(ok) correct++; }
+        if(!ok){ var again = Object.assign({},it,{retry:true, options:shuffle(it.options)}); queue.push(again); results.push(null); }
+        stage.querySelector("#fb").innerHTML = '<div class="why '+(ok?'ok':'no')+'"><b>'+(ok?'Correct.':'Not quite. Answer: '+esc(it.answer))+'</b><br>'+esc(it.why)+'</div><div class="row" style="margin-top:10px"><button class="btn primary" id="nx">Next</button></div>';
+        var nx = stage.querySelector("#nx"); nx.focus(); nx.onclick=function(){ idx++; show(); };
+      };
+    });
+  }
+  show();
+}
+
+/* decode */
+function runDecode(d){
+  var items = shuffle(DECODE), idx=0, total=0, score=0;
+  function tokens(q, keys){
+    var out=[], rest=q;
+    var re = new RegExp("("+keys.map(function(k){return k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}).join("|")+")","g");
+    var parts = q.split(re).filter(function(x){return x!=="";});
+    parts.forEach(function(p){
+      if(keys.indexOf(p)>=0) out.push({t:p,key:true});
+      else p.split(/\s+/).filter(Boolean).forEach(function(w){ out.push({t:w,key:false}); });
+    });
+    return out;
+  }
+  function show(){
+    if(idx>=items.length){ var pct=Math.round(100*score/total); finish(d.id,pct);
+      stage.innerHTML='<h3>Decode · done</h3><p class="mark-big">'+pct+'%</p><div class="row"><button class="btn primary" id="again">Again</button></div>';
+      stage.querySelector("#again").onclick=function(){ runDecode(d); }; return; }
+    var it = items[idx], toks = tokens(it.q, it.keys);
+    stage.innerHTML = '<div class="row" style="justify-content:space-between"><h3>Decode the question</h3><span class="mono small">'+(idx+1)+' / '+items.length+'</span></div><p class="small muted">Tap every word or phrase a marker will check you addressed. Then press Check.</p><div class="question" style="font-weight:500">'+toks.map(function(t,i){return '<button class="tok" data-i="'+i+'" aria-pressed="false">'+esc(t.t)+'</button>';}).join("")+'</div><div class="row"><button class="btn primary" id="chk">Check</button></div><div id="fb"></div>';
+    stage.querySelectorAll(".tok").forEach(function(b){ b.onclick=function(){ b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed")!=="true")); }; });
+    stage.querySelector("#chk").onclick=function(){
+      var hit=0, extra=0;
+      stage.querySelectorAll(".tok").forEach(function(b){
+        var t=toks[+b.dataset.i], on=b.getAttribute("aria-pressed")==="true"; b.disabled=true;
+        if(t.key && on) hit++; if(t.key && !on) b.classList.add("miss"); if(!t.key && on){ extra++; b.classList.add("extra"); }
+      });
+      var pts = Math.max(0, hit - extra*0.5)/it.keys.length; total++; score+=pts; rep(pts>=0.75);
+      stage.querySelector("#fb").innerHTML = '<div class="why '+(pts>=0.75?'ok':'no')+'"><b>'+hit+' of '+it.keys.length+' keywords'+(extra?' · '+extra+' extra':'')+'</b> (dashed = missed)<br>'+esc(it.why)+'</div><div class="row" style="margin-top:10px"><button class="btn primary" id="nx">Next</button></div>';
+      this.disabled=true; stage.querySelector("#nx").onclick=function(){ idx++; show(); };
+    };
+  }
+  show();
+}
+
+/* order */
+function runOrder(d){
+  var items = shuffle(ORDER), idx=0, total=0, score=0;
+  function show(){
+    if(idx>=items.length){ var pct=Math.round(100*score/total); finish(d.id,pct);
+      stage.innerHTML='<h3>Build in order · done</h3><p class="mark-big">'+pct+'%</p><div class="row"><button class="btn primary" id="again">Again</button></div>';
+      stage.querySelector("#again").onclick=function(){ runOrder(d); }; return; }
+    var it = items[idx], sh = shuffle(it.parts.map(function(p,i){return {p:p,i:i};})), placed=[];
+    stage.innerHTML = '<div class="row" style="justify-content:space-between"><h3>'+esc(it.title)+'</h3><span class="mono small">'+(idx+1)+' / '+items.length+'</span></div><p class="small muted">Tap the pieces in the order they should appear. Tap again to undo.</p><div class="order-list">'+sh.map(function(o,k){return '<button class="order-item" data-k="'+k+'"><span class="num">·</span><span>'+esc(o.p)+'</span></button>';}).join("")+'</div><div class="row"><button class="btn primary" id="chk" disabled>Check</button></div><div id="fb"></div>';
+    var btns = stage.querySelectorAll(".order-item"), chk = stage.querySelector("#chk");
+    function redraw(){ btns.forEach(function(b){ var k=+b.dataset.k, pos=placed.indexOf(k); b.classList.toggle("placed",pos>=0); b.querySelector(".num").textContent = pos>=0?(pos+1):"·"; }); chk.disabled = placed.length!==sh.length; }
+    btns.forEach(function(b){ b.onclick=function(){ var k=+b.dataset.k, pos=placed.indexOf(k); if(pos>=0) placed.splice(pos,1); else placed.push(k); redraw(); }; });
+    chk.onclick=function(){
+      var right=0; placed.forEach(function(k,pos){ if(sh[k].i===pos) right++; });
+      var pts=right/sh.length; total++; score+=pts; rep(pts===1);
+      btns.forEach(function(b){ b.disabled=true; });
+      stage.querySelector("#fb").innerHTML='<div class="why '+(pts===1?'ok':'no')+'"><b>'+right+' / '+sh.length+' in the right spot.</b><br>Correct order:<ol class="small">'+it.parts.map(function(p){return '<li>'+esc(p)+'</li>';}).join("")+'</ol></div><div class="row" style="margin-top:10px"><button class="btn primary" id="nx">Next</button></div>';
+      chk.disabled=true; stage.querySelector("#nx").onclick=function(){ idx++; show(); };
+    };
+  }
+  show();
+}
+
+/* thesis machine */
+function runThesis(d){
+  var SLOTS = [
+    {k:"who", label:"1 · Composer + text", ph:"Shakespeare's Othello", opts:["Henry Lawson's \"The Drover's Wife\"","Shakespeare's Othello","Austen's Pride and Prejudice","The textual conversation between Hamlet and Dickinson's poetry"]},
+    {k:"verb", label:"2 · Precise verb", ph:"reveals that", opts:["reveals that","illuminates how","interrogates whether","exposes how","suggests that"]},
+    {k:"idea", label:"3 · Idea (use the question's keyword)", ph:"jealousy is a self-generated force", opts:["human endurance is fundamentally paradoxical","jealousy is a self-generated force","marriage is shaped as much by economics as by love","death is a question that resists every answer"]},
+    {k:"twist", label:"4 · Complication (the tension)", ph:"that destroys the very love it claims to protect", opts:["sustaining the individual while eroding her sense of self","that destroys the very love it claims to protect","yet genuine understanding can still reshape a rigid society","though each composer meets that uncertainty in a radically different form"]}
+  ];
+  stage.innerHTML = '<h3>Thesis machine</h3><p class="small muted">Fill each slot (pick a suggestion or type your own). The thesis assembles live. Then run the checks.</p><div class="grid2">'+SLOTS.map(function(s){
+    return '<div class="field"><label for="ts-'+s.k+'">'+esc(s.label)+'</label><input type="text" id="ts-'+s.k+'" list="tl-'+s.k+'" placeholder="'+esc(s.ph)+'"><datalist id="tl-'+s.k+'">'+s.opts.map(function(o){return '<option value="'+esc(o)+'">';}).join("")+'</datalist></div>';
+  }).join("")+'</div><div class="field"><span class="eqname">Your thesis</span><div class="eq" id="tsOut" style="font-family:var(--f-body);line-height:1.6"></div></div><div class="row"><button class="btn primary" id="tsChk">Check my thesis</button><button class="btn" id="tsEx">Fill an example</button></div><div id="fb"></div>';
+  var inputs = SLOTS.map(function(s){ return stage.querySelector("#ts-"+s.k); });
+  function val(i){ return inputs[i].value.trim(); }
+  function build(){
+    var who=val(0)||"[composer + text]", verb=val(1)||"[verb]", idea=val(2)||"[idea]", tw=val(3)||"[complication]";
+    var joiner = /^(that|yet|though|although|but|while|sustaining|whereas|even)/i.test(tw)? ", " : ": ";
+    stage.querySelector("#tsOut").innerHTML = V("thesis",who)+" "+V("topic",verb)+" "+V("analysis",idea)+esc(joiner)+V("context",tw)+".";
+  }
+  inputs.forEach(function(i){ i.addEventListener("input", build); });
+  stage.querySelector("#tsEx").onclick=function(){ var n=Math.floor(Math.random()*4); inputs.forEach(function(inp,i){ inp.value = SLOTS[i].opts[Math.min(n, SLOTS[i].opts.length-1)]; }); build(); };
+  stage.querySelector("#tsChk").onclick=function(){
+    var all = inputs.map(function(i){return i.value;}).join(" ").toLowerCase();
+    var checks = [
+      [val(0).length>3, "Names the composer and text"],
+      [val(1) && !/\b(shows?|talks about|is about|says)\b/.test(val(1).toLowerCase()), "Uses a precise verb (not shows / talks about / is about)"],
+      [val(2).split(/\s+/).length>=4, "States an idea, not just a topic word"],
+      [val(3).split(/\s+/).length>=5, "Adds a complication (tension makes it insightful)"],
+      [!/\b(i think|i believe|in this essay)\b/.test(all), "No 'I think' or 'in this essay'"],
+      [all.split(/\s+/).length<=55, "Under ~55 words (one sharp sentence)"]
+    ];
+    var passed = checks.filter(function(c){return c[0];}).length;
+    rep(passed===checks.length); finish(d.id, Math.round(100*passed/checks.length));
+    stage.querySelector("#fb").innerHTML = '<div class="why '+(passed===checks.length?'ok':'no')+'"><b>'+passed+' / '+checks.length+' checks passed</b><ul class="clean audit small" style="margin-top:6px">'+checks.map(function(c){return '<li class="'+(c[0]?'pass':'fail')+'">'+esc(c[1])+'</li>';}).join("")+'</ul><p class="small" style="margin-top:8px">Final test only you can do: does it answer <i>the exact question</i> in front of you? Swap in the question\'s keyword.</p></div>';
+  };
+  build();
+}
+
+/* ---------- writing ---------- */
+var QUESTIONS = {
+  "Texts and human experiences (Common Module)":[
+    "To what extent does your prescribed text reveal the paradoxes of human behaviour?",
+    "How does your prescribed text invite you to see the world differently?",
+    "Explore how your prescribed text represents individual and collective experiences of resilience.",
+    "Texts reveal the tension between agency and conformity. Evaluate this statement in relation to your prescribed text.",
+    "How does your prescribed text represent the emotions that shape human growth?"
+  ],
+  "Textual conversations (Module A)":[
+    "Evaluate how the textual conversation between your prescribed texts reframes ideas about power.",
+    "To what extent do the resonances between your texts outweigh their dissonances?",
+    "How has the context of each text shaped your understanding of the conversation between them?",
+    "The later text both honours and resists the earlier one. Discuss with reference to your pair of texts.",
+    "How do the different forms of your texts shape the way they speak to each other?"
+  ],
+  "Critical study of literature (Module B)":[
+    "How does the composer's use of form shape your understanding of the text's enduring value?",
+    "To what extent is your prescribed text valued for the tensions it leaves unresolved?",
+    "Evaluate how the construction of your prescribed text shapes its distinctive perspective.",
+    "Your critical study has deepened your appreciation of the text's artistry. Discuss.",
+    "How does your prescribed text challenge the expectations of its form or genre?"
+  ]
+};
+var wModule=document.getElementById("wModule"), wQ=document.getElementById("wQ"), wBox=document.getElementById("wBox"), wText=document.getElementById("wText");
+function randQ(){ var list=QUESTIONS[wModule.value]; wQ.value = list[Math.floor(Math.random()*list.length)]; persist(); }
+document.getElementById("wNewQ").onclick=randQ;
+wModule.onchange=randQ;
+wBox.value = S.draft||""; wQ.value = S.q || QUESTIONS[wModule.value][0]; wText.value = S.text||"";
+if(S.module) wModule.value = S.module;
+function persist(){ S.draft=wBox.value; S.q=wQ.value; S.text=wText.value; S.module=wModule.value; save(); }
+[wBox,wQ,wText].forEach(function(el){ el.addEventListener("input", function(){ persist(); meter(); }); });
+
+var mins=12, left=12*60, tId=null, started=null;
+function fmt(s){ var m=Math.floor(Math.abs(s)/60), r=Math.abs(s)%60; return (s<0?"-":"")+String(m).padStart(2,"0")+":"+String(r).padStart(2,"0"); }
+function drawT(){ var t=document.getElementById("wTimer"); t.textContent=fmt(left); t.style.color = left<0? "var(--bad)" : (left<60? "var(--warn)":"var(--ink)"); }
+document.querySelectorAll("[data-min]").forEach(function(b){ b.onclick=function(){ mins=+b.dataset.min; document.querySelectorAll("[data-min]").forEach(function(x){x.setAttribute("aria-pressed",String(x===b));}); resetT(); }; });
+function resetT(){ clearInterval(tId); tId=null; started=null; left=mins*60; drawT(); document.getElementById("wStart").textContent="Start"; }
+document.getElementById("wReset").onclick=resetT;
+document.getElementById("wStart").onclick=function(){
+  if(tId){ clearInterval(tId); tId=null; this.textContent="Resume"; return; }
+  if(!started) started=Date.now();
+  this.textContent="Pause"; wBox.focus();
+  tId=setInterval(function(){ left--; drawT(); meter(); }, 1000);
+};
+drawT();
+function words(t){ return (t.trim().match(/\S+/g)||[]).length; }
+function quotes(t){ return (t.match(/["“”][^"“”]{2,}["“”]/g)||[]).length; }
+function meter(){
+  var t=wBox.value, w=words(t);
+  document.getElementById("mWords").textContent=w;
+  document.getElementById("mQuotes").textContent=quotes(t);
+  document.getElementById("mParas").textContent=t.split(/\n\s*\n|\n/).filter(function(p){return p.trim().split(/\s+/).length>12;}).length;
+  var elapsed = mins*60-left; document.getElementById("mWpm").textContent = elapsed>30? Math.round(w/(elapsed/60)) : "–";
+}
+meter();
+
+document.getElementById("wAudit").onclick=function(){
+  var t=wBox.value, low=t.toLowerCase(), w=words(t), q=wQ.value.toLowerCase();
+  var stop = ["the","a","an","of","to","your","how","does","in","and","is","this","what","with","their","its","between","do","you","on","for","as","has","been","that","which","texts","text","prescribed","statement","reference","relation","discuss","evaluate","explore","extent"];
+  var keys = (q.match(/[a-z']+/g)||[]).filter(function(x){ return x.length>4 && stop.indexOf(x)<0; });
+  keys = keys.filter(function(k,i){ return keys.indexOf(k)===i; });
+  var found = keys.filter(function(k){ return low.indexOf(k.slice(0,Math.max(5,k.length-2)))>=0; });
+  var shows = (low.match(/\bshows?\b/g)||[]).length;
+  var retell = (low.match(/\b(then|after that|next,|later on|in the end)\b/g)||[]).length;
+  var paras = t.split(/\n/).filter(function(p){return p.trim().split(/\s+/).length>12;});
+  var target = mins>=40?1000: mins>=12?250:40;
+  var items = [
+    [w>=target*0.8, "Length: "+w+" words (target for this sprint ≈ "+target+")"],
+    [keys.length===0 || found.length>=Math.ceil(keys.length*0.6), "Question keywords used: "+(found.length? found.join(", "):"none")+(keys.length?" (of "+keys.join(", ")+")":"")],
+    [quotes(t) >= (mins>=40?9: mins>=12?3:0), "Quotes: "+quotes(t)+(mins>=40?" (aim for 9+)":mins>=12?" (aim for 3)":"")],
+    [shows<=1, "\"shows\" used "+shows+" time(s). Swap for precise verbs."],
+    [!/since the dawn of time|throughout history|in this essay i will|in conclusion,? i have/.test(low), "No generic openers or 'in conclusion, I have shown'"],
+    [retell<=2, "Plot-sequence words (then / after that / next): "+retell+". High numbers usually mean retelling."],
+    [/\b(ultimately|thus|in doing so|crucially|this suggests|significant)\b/.test(low), "Evaluative language present (ultimately, thus, in doing so…)"],
+    [mins<40 || paras.length>=5, "Paragraphs: "+paras.length+(mins>=40?" (intro + 3 body + conclusion = 5)":"")]
+  ];
+  document.getElementById("auditList").innerHTML = items.map(function(i){ return '<li class="'+(i[0]?'pass':'fail')+'">'+esc(i[1])+'</li>'; }).join("") + '<li class="info small muted">These are quick pattern checks. They can\'t judge insight. Use Claude marking or your teacher for that.</li>';
+  document.getElementById("auditCard").hidden=false;
+  rep(items.every(function(i){return i[0];}));
+};
+
+/* AI marking via sample capability */
+var sampleFn = null;
+if(window.claude && typeof window.claude.use==="function"){
+  window.claude.use("sample").then(function(s){
+    if(s){ sampleFn = s; document.getElementById("wAI").hidden=false; document.getElementById("wAIstate").textContent=""; }
+  }).catch(function(){});
+}
+document.getElementById("wAI").onclick = function(){
+  var t=wBox.value.trim(), btn=this, st=document.getElementById("wAIstate");
+  if(words(t)<40){ st.textContent="Write at least a paragraph first."; return; }
+  btn.disabled=true; st.textContent="Marking…";
+  var prompt = "You are an experienced NSW HSC English Advanced marker (2024 syllabus, first examined 2027). Mark the student writing below against NESA-style criteria for a 20-mark extended response.\n\n" +
+    "Band criteria: 17-20 skilfully evaluates the question's idea; well-informed understanding of context, language, form and ideas; well-selected, detailed textual references; insightful response with language suited to audience, purpose and form. 13-16 effectively; informed; detailed references; effective. 9-12 sound; references; sound. 5-8 describes some aspects; limited references. 1-4 attempts.\n" +
+    "Known marker priorities: answer every part of the question throughout; analyse rather than retell; weave context into analysis; confident personal voice; clear rather than wordy expression; integrated evidence; conceptual thesis; (Module A) balanced, integrated comparison.\n\n" +
+    "Module: "+wModule.value+"\nText(s): "+(wText.value||"not stated")+"\nQuestion: "+wQ.value+"\nSprint: "+mins+" minutes (if it is a single paragraph or thesis, mark it as that piece and give the mark it is tracking toward).\n\n" +
+    "STUDENT WRITING:\n\"\"\"\n"+t+"\n\"\"\"\n\n" +
+    "Be honest and specific; do not inflate. Use Australian spelling. Do not invent facts about the text; if a quote looks wrong, say to check it. Reply with ONLY a JSON object, no markdown fences:\n" +
+    "{\"mark\": number 0-20, \"band_range\": \"e.g. 13-16\", \"one_line\": \"one-sentence verdict\", \"strengths\": [\"2-3 items\"], \"fixes\": [{\"issue\": \"what is wrong\", \"where\": \"short quote from the student's text\", \"how\": \"exactly how to fix it\"}], \"rewrite\": {\"before\": \"one weak sentence from the student\", \"after\": \"that sentence rewritten to Band 6\"}, \"next_drill\": \"which skill to practise next\"}";
+  sampleFn(prompt, {modelTier:"complex"}).then(function(r){
+    var txt = (r && r.text)||"", data=null;
+    try{ var m = txt.match(/\{[\s\S]*\}/); data = JSON.parse(m?m[0]:txt); }catch(e){ data=null; }
+    var out = document.getElementById("aiOut");
+    if(!data){ out.innerHTML = '<p class="ai-out">'+esc(txt)+'</p>'; }
+    else {
+      out.innerHTML = '<div class="row" style="align-items:flex-end;gap:14px"><span class="mark-big">'+esc(data.mark)+'<span class="muted" style="font-size:1.2rem">/20</span></span><span class="pill top">'+esc(data.band_range||"")+'</span></div>'+
+        '<p style="margin-top:8px"><b>'+esc(data.one_line||"")+'</b></p>'+
+        '<h4 style="margin-top:12px">Strengths</h4><ul class="clean audit">'+(data.strengths||[]).map(function(s){return '<li class="pass">'+esc(s)+'</li>';}).join("")+'</ul>'+
+        '<h4 style="margin-top:12px">Fix these</h4><ul class="clean audit">'+(data.fixes||[]).map(function(f){return '<li class="fail"><b>'+esc(f.issue)+'</b>'+(f.where?'<br><span class="qquote small">'+esc(f.where)+'</span>':'')+'<br><span class="small">'+esc(f.how)+'</span></li>';}).join("")+'</ul>'+
+        (data.rewrite?'<h4 style="margin-top:12px">Upgrade example</h4><div class="grid2"><div class="why no small"><b>Before</b><br>'+esc(data.rewrite.before)+'</div><div class="why ok small"><b>After</b><br>'+esc(data.rewrite.after)+'</div></div>':'')+
+        (data.next_drill?'<p class="callout small" style="margin-top:12px"><b>Practise next:</b> '+esc(data.next_drill)+'</p>':'')+
+        '<p class="note" style="margin-top:10px">AI marking is a practice guide, not an official mark. Trust your teacher\'s feedback over it.</p>';
+    }
+    document.getElementById("aiCard").hidden=false; st.textContent=""; btn.disabled=false; rep(true);
+  }).catch(function(err){
+    btn.disabled=false;
+    if(err && err.code==="not_granted"){ btn.hidden=true; st.textContent="Claude marking isn't enabled here. Use the self-audit."; }
+    else if(err && err.code==="rate_limited"){ st.textContent="Too many requests. Wait a minute and try again."; }
+    else st.textContent="Marking failed. Try again in a moment.";
+  });
+};
+
+})();
+</script>
+</body>
+</html>
