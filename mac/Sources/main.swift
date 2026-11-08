@@ -1,13 +1,51 @@
-// HSC Essay Engine — macOS wrapper
-// Version 1.0.1
-// A native window around the bundled index.html. Progress is mirrored into
-// UserDefaults so it survives app restarts and updates.
+// HSC Essay Engine - macOS wrapper
+// Version 1.1.0
+// A native window around index.html. Progress is mirrored into UserDefaults
+// so it survives restarts and updates. On launch (and from the menu) it checks
+// GitHub for a newer index.html and installs it into Application Support.
 
 import Cocoa
 import WebKit
 
-let appVersion = "1.0.1"
+let appVersion = "1.1.0"
 let storeKey = "hsc-essay-engine-v1"   // must match KEY in index.html
+let updateURL = URL(string: "https://raw.githubusercontent.com/Brandonshev/hsc-essay-engine/main/web/index.html")!
+
+// MARK: - Content versioning
+
+func pageVersion(_ html: String) -> String? {
+    guard let r = html.range(of: #"var VERSION = "([0-9.]+)""#, options: .regularExpression) else { return nil }
+    let m = String(html[r])
+    return m.components(separatedBy: "\"").dropFirst().first
+}
+
+func isNewer(_ a: String, than b: String) -> Bool {
+    let x = a.split(separator: ".").map { Int($0) ?? 0 }
+    let y = b.split(separator: ".").map { Int($0) ?? 0 }
+    for i in 0..<max(x.count, y.count) {
+        let p = i < x.count ? x[i] : 0, q = i < y.count ? y[i] : 0
+        if p != q { return p > q }
+    }
+    return false
+}
+
+var supportDir: URL {
+    let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    let dir = base.appendingPathComponent("HSCEssayEngine", isDirectory: true)
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    return dir
+}
+var downloadedPage: URL { supportDir.appendingPathComponent("index.html") }
+
+/// The newest page available locally: the downloaded update if it beats the bundled copy.
+func currentPage() -> (url: URL, version: String)? {
+    guard let bundled = Bundle.main.url(forResource: "index", withExtension: "html") else { return nil }
+    let bv = (try? String(contentsOf: bundled, encoding: .utf8)).flatMap(pageVersion) ?? "0"
+    if let dl = try? String(contentsOf: downloadedPage, encoding: .utf8), let dv = pageVersion(dl), isNewer(dv, than: bv) {
+        return (downloadedPage, dv)
+    }
+    return (bundled, bv)
+}
 
 func jsStringLiteral(_ s: String) -> String {
     guard let data = try? JSONSerialization.data(withJSONObject: [s]),
@@ -62,12 +100,59 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         window.setFrameAutosaveName("HSCEssayEngineMain")
         window.makeKeyAndOrderFront(nil)
 
-        if let url = Bundle.main.url(forResource: "index", withExtension: "html") {
-            webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        loadCurrentPage()
+        NSApp.activate(ignoringOtherApps: true)
+        checkForUpdates(userInitiated: false)
+    }
+
+    func loadCurrentPage() {
+        if let page = currentPage() {
+            window.subtitle = "app v\(appVersion) · content v\(page.version)"
+            webView.loadFileURL(page.url, allowingReadAccessTo: page.url.deletingLastPathComponent())
         } else {
             webView.loadHTMLString("<h2 style='font-family:sans-serif'>index.html is missing from the app bundle. Rebuild with build.sh.</h2>", baseURL: nil)
         }
-        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    // MARK: - Updates
+
+    @objc func checkForUpdatesMenu(_ sender: Any?) { checkForUpdates(userInitiated: true) }
+
+    func checkForUpdates(userInitiated: Bool) {
+        var req = URLRequest(url: updateURL)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        req.timeoutInterval = 15
+        URLSession.shared.dataTask(with: req) { data, response, error in
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            let html = data.flatMap { String(data: $0, encoding: .utf8) }
+            DispatchQueue.main.async {
+                guard error == nil, status == 200, let html = html, let remote = pageVersion(html) else {
+                    if userInitiated {
+                        self.info("Couldn't check for updates",
+                                  status == 404 ? "GitHub returned 404. The hsc-essay-engine repo needs to be public for updates to download." :
+                                  "Check your internet connection and try again.")
+                    }
+                    return
+                }
+                let local = currentPage()?.version ?? "0"
+                if isNewer(remote, than: local) {
+                    do { try html.write(to: downloadedPage, atomically: true, encoding: .utf8) }
+                    catch { if userInitiated { self.info("Update failed", error.localizedDescription) }; return }
+                    let a = NSAlert()
+                    a.messageText = "Update installed: v\(remote)"
+                    a.informativeText = "You had v\(local). Your progress is kept."
+                    a.addButton(withTitle: "Reload now")
+                    a.addButton(withTitle: "Later")
+                    if a.runModal() == .alertFirstButtonReturn { self.loadCurrentPage() }
+                } else if userInitiated {
+                    self.info("You're up to date", "Content v\(local) is the latest.")
+                }
+            }
+        }.resume()
+    }
+
+    func info(_ title: String, _ text: String) {
+        let a = NSAlert(); a.messageText = title; a.informativeText = text; a.runModal()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
@@ -102,6 +187,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let appItem = NSMenuItem(); main.addItem(appItem)
         let appMenu = NSMenu()
         appMenu.addItem(withTitle: "About HSC Essay Engine", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        let upd = appMenu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdatesMenu(_:)), keyEquivalent: "u")
+        upd.target = self
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Hide HSC Essay Engine", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         appMenu.addItem(.separator())

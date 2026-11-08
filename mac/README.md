@@ -1,4 +1,4 @@
-# HSC Essay Engine for Mac (v1.0.1)
+# HSC Essay Engine for Mac (v1.1.0)
 
 A native Mac app version of the essay training page. It works offline and keeps your progress between launches.
 
@@ -23,4 +23,4 @@ If it says the Swift compiler isn't found, run `xcode-select --install`, wait fo
 - Cmd + / Cmd − to zoom. Cmd R to reload.
 
 ## Updating
-Replace `Resources/index.html` with a newer version and run `bash build.sh --install` again. Your progress is kept.
+The app updates its own content: on launch, or with Cmd U, it checks GitHub for a newer `web/index.html` and installs it. The repo must be public for this. You only need to rebuild when the app itself (the Swift code) changes. Your progress is kept either way.

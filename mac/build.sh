@@ -1,12 +1,12 @@
 #!/bin/bash
-# HSC Essay Engine - build script v1.0.2
+# HSC Essay Engine - build script v1.1.0
 # Usage:  bash build.sh            (build and open)
 #         bash build.sh --install  (build, copy to /Applications, open)
 set -euo pipefail
 cd "$(dirname "$0")"
 
 APP="HSC Essay Engine.app"
-VERSION="1.0.1"
+VERSION="1.1.0"
 
 if ! command -v swiftc >/dev/null 2>&1; then
   echo "Swift compiler not found. Run this first, then try again:"

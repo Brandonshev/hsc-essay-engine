@@ -2,25 +2,24 @@
 
 # HSC Essay Engine
 
-**v1.0.1** · A training tool for NSW HSC English Advanced essays, built for the new English Advanced 11–12 Syllabus (2024), first examined in 2027.
+**Content v2.0.0 · Mac app v1.1.0** · A training tool for NSW HSC English Advanced essays, built for the new English Advanced 11–12 Syllabus (2024), first examined in 2027. Currently focused on Gwen Harwood (Common Module).
 
-It breaks essay writing down into formulas, then drills them until they're automatic.
+The whole essay as one formula: **TCR · PQTEL ×3 · RS**. Thesis = idea + twist.
 
 ## What's inside
 
 | Section | What it does |
 |---|---|
-| The exam | Paper 1 and Paper 2 layout, timing, word targets, essay skeleton diagram |
-| What markers want | NESA band criteria translated into plain behaviour, plus 8 laws from HSC marker feedback |
-| Formulas | F0–F8: whole essay, thesis, intro, topic sentence, analysis atom, body paragraph, conclusion, planning, self-check mark model |
-| Analysis ladder | One quote analysed at six levels, from retelling to Band 6 judgement |
-| Watch it built | Animated step-by-step builds of a thesis, a paragraph and a 40-minute exam run |
-| Model essay | Full colour-coded Common Module essay on Lawson's "The Drover's Wife" |
-| Per module | How the formula changes for Common Module, Module A, B and C |
-| Drills | 7 drill types with explanations; missed questions repeat; streaks and best scores |
-| Write + get marked | Timed sprints, live word count, automatic self-audit |
-| Training plan | Daily routine and phases from now to the 2027 HSC |
-| 2027 texts | Full prescribed text list |
+| Start here | Where Harwood fits in the exam, the one-line essay formula, what markers want |
+| The formula | Thesis, intro (TCR), QTE, paragraph (PQTEL), conclusion (RS), 5-minute plan, each with a try-it mission |
+| Analysis ladder | One Harwood quote analysed at six levels |
+| Harwood's 7 poems | Story, ideas, form, starter quotes and a personal quote bank for each poem; ideas mind map; context hooks |
+| Watch it built | Animated builds of a thesis, a QTE and a full paragraph |
+| Exemplar | Colour-coded essay on Barn Owl, The Glass Jar, Nightfall and The Violets |
+| Missions | 11 try-it tasks with codes (HW-T1, HW-Q1…) that copy straight into a Claude chat |
+| Drills | Which poem?, technique ID, spot the part, weak/strong, verbs, decode, ordering |
+| Timed writing | Sprints, self-audit, copy for marking |
+| Plan | 14-day Harwood sprint |
 
 ## Two versions
 
@@ -31,6 +30,8 @@ It breaks essay writing down into formulas, then drills them until they're autom
   bash build.sh --install
   ```
   Needs the Xcode command line tools (`xcode-select --install`).
+
+  **Updates:** the app checks this repo on launch (and via *Check for Updates…*, Cmd U). When `web/index.html` has a higher `VERSION`, it downloads and installs it automatically. This only works while the repo is **public**.
 
 AI marking against the NESA criteria is only available in the claude.ai-hosted version of the page.
 
