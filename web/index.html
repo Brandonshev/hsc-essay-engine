@@ -147,7 +147,7 @@ th{font-family:var(--f-mono); font-size:.76rem; text-transform:uppercase; letter
 .essay.colour [data-part="topic"]{background:var(--b-topic); box-shadow:inset 0 -2px 0 var(--c-topic)}
 .essay.colour [data-part="evidence"]{background:var(--b-evidence); box-shadow:inset 0 -2px 0 var(--c-evidence)}
 .essay.colour [data-part="analysis"]{background:var(--b-analysis); box-shadow:inset 0 -2px 0 var(--c-analysis)}
-.essay.colour [data-part="context"]{background:var(--b-context); box-shadow:inset 0 -2px 0 var(--c-context)}
+.essay.colour [data-part="def"], .essay.colour [data-part="context"]{background:var(--b-context); box-shadow:inset 0 -2px 0 var(--c-context)}
 .essay.colour [data-part="link"]{background:var(--b-link); box-shadow:inset 0 -2px 0 var(--c-link)}
 .essay .plabel{font-family:var(--f-mono); font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); display:block; margin:18px 0 4px}
 .question{font-family:var(--f-display); font-weight:700; font-size:1.1rem; border:2px solid var(--ink); border-radius:10px; padding:12px 14px}
@@ -300,9 +300,9 @@ footer{max-width:1080px; margin:0 auto; padding:0 16px 40px; color:var(--muted);
   </div>
   <div class="card">
     <h3>The whole essay in one line</h3>
-    <div class="bigcode"><span class="k-t">TCR</span> · <span class="k-p">P</span><span class="k-q">QTE</span><span class="k-q">QTE</span><span class="k-q">QTE</span><span class="k-l">L</span> ×3 · <span class="k-t">RS</span></div>
+    <div class="bigcode"><span class="k-c">D</span><span class="k-t">T</span><span class="k-p">CR</span> · <span class="k-p">P</span><span class="k-q">QTE</span><span class="k-q">QTE</span><span class="k-q">QTE</span><span class="k-l">L</span> ×3 · <span class="k-t">RS</span></div>
     <div class="grid3">
-      <div class="kid"><b>TCR</b> = intro<br>Thesis, Context, Roadmap</div>
+      <div class="kid"><b>D·T·CR</b> = intro<br>Definition, Thesis, Contextual Roadmap</div>
       <div class="kid"><b>P·QTE×3·L</b> = each body paragraph<br>Point, then 3 × (Quote, Technique, Effect), then Link</div>
       <div class="kid"><b>RS</b> = conclusion<br>Restate, So what</div>
     </div>
@@ -356,10 +356,11 @@ footer{max-width:1080px; margin:0 auto; padding:0 16px 40px; color:var(--muted);
 
   <!-- F2 intro -->
   <div class="card" id="f-intro">
-    <span class="eqname">Formula 2 · Introduction</span>
-    <div class="eq"><span class="var v-thesis">INTRO</span> = <span class="var v-thesis">T</span>hesis + <span class="var v-context">C</span>ontext + <span class="var v-topic">R</span>oadmap</div>
-    <div class="kid"><b>Like you're 8:</b> 3–4 sentences. <b>T</b>: your thesis. <b>C</b>: one sentence about Harwood's world that matters to your argument. <b>R</b>: name your 3 poems and what each one shows, in one sentence. If the question says "to what extent", end with "largely", "partly" or "entirely".</div>
-    <div class="eq">R template: "In <span class="var v-plain">poem A</span>, ___; in <span class="var v-plain">poem B</span>, ___; and in <span class="var v-plain">poem C</span>, ___."</div>
+    <span class="eqname">Formula 2 · Introduction (your teacher's structure)</span>
+    <div class="eq"><span class="var v-thesis">INTRO</span> = <span class="var v-context">D</span>efinition + <span class="var v-thesis">T</span>hesis + <span class="var v-topic">CR</span> contextual roadmap</div>
+    <div class="kid"><b>Like you're 8:</b> <b>D</b>: define the human experience in one sentence, and bend it towards the question's keyword. <b>T</b>: your thesis (idea + twist), with an evaluative word. <b>CR</b>: one sentence per poem saying what it shows about the keyword, with a context hook woven in. If the question says "to what extent", finish with a one-line judgement: "largely", "partly" or "entirely".</div>
+    <div class="eq">D: "Human experience is shaped by <span class="var v-plain">emotions, choices and relationships</span>, especially <span class="var v-plain">[keyword link]</span>."<br>T: "Harwood <span class="var v-plain">[evaluative verb]</span> that <span class="var v-plain">[idea]</span>, yet <span class="var v-plain">[twist]</span>."<br>CR: "In <span class="var v-plain">poem A</span>, ___; in <span class="var v-plain">poem B</span>, ___; and in <span class="var v-plain">poem C</span>, ___."</div>
+    <p class="small"><b>Definition test:</b> could it start an essay on any text? Then add a clause that leans towards the question. <b>Evaluative verbs:</b> poignantly reveals, powerfully exposes, compellingly suggests. Avoid empty praise like "masterful" or "successfully".</p>
     <div class="mission" data-mission="HW-I1"></div>
   </div>
 
@@ -512,7 +513,7 @@ footer{max-width:1080px; margin:0 auto; padding:0 16px 40px; color:var(--muted);
 <section class="view" id="v-model">
   <div class="card">
     <h2>Exemplar: Harwood, colour-coded</h2>
-    <p class="readable">An original essay written to the 17–20 criteria using exactly TCR · PQTEL ×3 · RS. Read it once for the argument, then once just watching the colours repeat.</p>
+    <p class="readable">An original essay written to the 17–20 criteria using exactly D·T·CR · PQTEL ×3 · RS. Read it once for the argument, then once just watching the colours repeat.</p>
     <div class="row">
       <div class="seg" role="group" aria-label="Colour coding">
         <button id="colOn" aria-pressed="true">Colours on</button>
@@ -521,15 +522,15 @@ footer{max-width:1080px; margin:0 auto; padding:0 16px 40px; color:var(--muted);
       <span class="small muted" id="essayWords"></span>
     </div>
     <div class="legend small">
-      <span class="var v-thesis">T thesis / restate</span><span class="var v-topic">P point / roadmap</span><span class="var v-evidence">Q+T</span><span class="var v-analysis">E effect</span><span class="var v-context">C context</span><span class="var v-link">L link / so what</span>
+      <span class="var v-context">D definition</span><span class="var v-thesis">T thesis / restate</span><span class="var v-topic">P point / roadmap</span><span class="var v-evidence">Q+T</span><span class="var v-analysis">E effect</span><span class="var v-context">C context</span><span class="var v-link">L link / so what</span>
     </div>
     <p class="note">NESA doesn't publish real 20/20 scripts, so this is my own model. Verify each quote in your edition before using it.</p>
   </div>
   <div class="card">
     <p class="question">Some experiences change the way we see the world forever. To what extent does your prescribed text support this view?</p>
     <div class="essay colour" id="essay">
-      <span class="plabel">Introduction · TCR</span>
-      <p><span data-part="thesis">Gwen Harwood's poetry suggests that the experiences which change us most are moments when childhood certainty collapses, yet her poems also reveal that this loss can become the beginning of a deeper, more compassionate understanding.</span> <span data-part="context">Drawing on her Brisbane childhood, her Christian upbringing and a lifelong fascination with philosophy, Harwood returns again and again to the threshold between innocence and experience.</span> <span data-part="topic">In "Barn Owl", a child's act of power becomes a confrontation with death; in "The Glass Jar", a child's faith in a talisman is betrayed; and in "Nightfall" and "The Violets", the adult speaker discovers that memory can turn these wounds into wisdom.</span> <span data-part="thesis">The view is therefore largely true, though Harwood insists that what changes is not only how we see the world, but how we learn to live in it.</span></p>
+      <span class="plabel">Introduction · D·T·CR</span>
+      <p><span data-part="def">Human experience is shaped by the emotions, choices and relationships through which we confront change, and few experiences reshape us as permanently as our first encounters with loss and mortality.</span> <span data-part="thesis">Gwen Harwood's poetry suggests that the experiences which change us most are moments when childhood certainty collapses, yet her poems also reveal that this loss can become the beginning of a deeper, more compassionate understanding.</span> <span data-part="context">Drawing on her Brisbane childhood, her Christian upbringing and a lifelong fascination with philosophy, Harwood returns again and again to the threshold between innocence and experience.</span> <span data-part="topic">In "Barn Owl", a child's act of power becomes a confrontation with death; in "The Glass Jar", a child's faith in a talisman is betrayed; and in "Nightfall" and "The Violets", the adult speaker discovers that memory can turn these wounds into wisdom.</span> <span data-part="thesis">The view is therefore largely true, though Harwood insists that what changes is not only how we see the world, but how we learn to live in it.</span></p>
 
       <span class="plabel">Body 1 · PQTEL · "Barn Owl"</span>
       <p><span data-part="topic">In "Barn Owl", Harwood shows that a single experience can shatter a child's belief that she controls life and death.</span> <span data-part="evidence">The opening, "Daybreak: the household slept. / I rose, blessed by the sun", uses religious imagery and a hushed caesura</span> <span data-part="analysis">to cast the child as innocent and chosen, as if baptised by the morning light.</span> <span data-part="evidence">This innocence is instantly undercut by the demonic metaphor "A horny fiend, I crept / out with my father's gun",</span> <span data-part="analysis">which exposes the secret thrill of disobedience living inside the "blessed" child.</span> <span data-part="evidence">In the barn she imagines herself "master of life and death, / a wisp-haired judge", and the irony of the tiny "wisp-haired" figure claiming godlike authority</span> <span data-part="analysis">foreshadows her fall.</span> <span data-part="evidence">When the owl does not die, the child who "believed death clean / and final" meets something "obscene", the enjambment spilling across the line break</span> <span data-part="analysis">as her expectations spill into horror.</span> <span data-part="context">Harwood once described her poetry as an attempt to keep off "existential terror", and here she dramatises the moment that terror first arrives.</span> <span data-part="link">The experience permanently alters the child's view of the world: power, she learns, carries consequences that cannot be undone.</span></p>
@@ -655,13 +656,13 @@ footer{max-width:1080px; margin:0 auto; padding:0 16px 40px; color:var(--muted);
     <a href="https://curriculum.nsw.edu.au/learning-areas/english/english-advanced-11-12-2024/assessment/hsc-examinations">NESA exam specifications</a> ·
     <a href="https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/english-advanced/2025">2025 HSC marking feedback</a>
   </div>
-  <div>v2.0.0 · Progress, missions and quote banks are saved in this browser only.</div>
+  <div>v2.1.0 · Progress, missions and quote banks are saved in this browser only.</div>
 </footer>
 
 <script>
 (function(){
 "use strict";
-var VERSION = "2.0.0";
+var VERSION = "2.1.0";
 
 /* ---------- storage ---------- */
 var KEY = "hsc-essay-engine-v1";
@@ -715,9 +716,9 @@ var MISSIONS = [
   {code:"HW-P1", title:"Full paragraph: The Glass Jar", where:"f-para", formula:"P + QTE + QTE + QTE + context + L",
    task:"Write one full PQTEL paragraph (~250 words) on \"The Glass Jar\" answering: \"How does Harwood represent the loss of innocence?\"",
    hint:"P: name the poem + the keyword (innocence). QTEs small → big. Context hook: religious imagery from her Christian upbringing, or the psychoanalytic reading. L: answer the question again."},
-  {code:"HW-I1", title:"Introduction (TCR)", where:"f-intro", formula:"INTRO = Thesis + Context + Roadmap",
+  {code:"HW-I1", title:"Introduction (D·T·CR)", where:"f-intro", formula:"INTRO = Definition + Thesis + Contextual roadmap",
    task:"Write an introduction (3–4 sentences) for: \"How does Harwood's poetry represent the experience of growing up?\" Use three poems.",
-   hint:"R template: In [poem A], ___; in [poem B], ___; and in [poem C], ___."},
+   hint:"D: define the human experience, bent towards the keyword. T: idea + twist with an evaluative verb. CR: In [poem A], ___; in [poem B], ___; and in [poem C], ___, with a context hook. End with an extent word if asked."},
   {code:"HW-C1", title:"Conclusion (RS)", where:"f-concl", formula:"CONCLUSION = Restate (new words) + So what?",
    task:"Write a conclusion (2–3 sentences) for the same question as HW-I1: \"How does Harwood's poetry represent the experience of growing up?\"",
    hint:"No new quotes. Last sentence = why this matters to people now."},
@@ -727,7 +728,7 @@ var MISSIONS = [
   {code:"HW-X1", title:"Paragraph on a new poem", where:"v-model", formula:"P + QTE ×3 + context + L",
    task:"Write a PQTEL paragraph for the exemplar's question (\"Some experiences change the way we see the world forever. To what extent…?\") using a poem the exemplar didn't use: \"At Mornington\", \"A Valediction\", \"Beyond Metaphor\" or \"The Sharpness of Death\".",
    hint:"Use quotes from your own copy of the poem. Make the poem fit the thesis, or show where it complicates it."},
-  {code:"HW-E1", title:"Full timed essay", where:"v-write", formula:"TCR · PQTEL ×3 · RS",
+  {code:"HW-E1", title:"Full timed essay", where:"v-write", formula:"D·T·CR · PQTEL ×3 · RS",
    task:"Write a full essay in the Timed writing section (09), then press Copy for Claude there.",
    hint:"40 minutes: 5 plan, 32 write, 3 check.", external:true}
 ];
@@ -931,8 +932,8 @@ document.querySelectorAll("[data-speed]").forEach(function(b){ b.onclick=functio
 drawFrame();
 
 /* ---------- drills ---------- */
-var PL={thesis:"T · Thesis / restate", topic:"P · Point / roadmap", evidence:"Q+T · Quote + technique", analysis:"E · Effect", context:"C · Context", link:"L · Link / so what"};
-var PW={thesis:"It states (or restates) the essay's overall argument.", topic:"It names what a paragraph proves, or lists the poems and what each shows.", evidence:"It gives a quote and names Harwood's technique.", analysis:"It explains what the technique makes us see or feel and what that means about people.", context:"It brings in Harwood's life or world to explain why she wrote this way.", link:"It answers the question again with a judgement."};
+var PL={def:"D · Definition", thesis:"T · Thesis / restate", topic:"P · Point / roadmap", evidence:"Q+T · Quote + technique", analysis:"E · Effect", context:"C · Context", link:"L · Link / so what"};
+var PW={def:"It defines the human experience in a way that leads into the argument.", thesis:"It states (or restates) the essay's overall argument.", topic:"It names what a paragraph proves, or lists the poems and what each shows.", evidence:"It gives a quote and names Harwood's technique.", analysis:"It explains what the technique makes us see or feel and what that means about people.", context:"It brings in Harwood's life or world to explain why she wrote this way.", link:"It answers the question again with a judgement."};
 function partItems(){ var out=[]; essay.querySelectorAll("[data-part]").forEach(function(s,i){ var p=s.dataset.part; out.push({q:"Which part of the formula is this?", quote:s.textContent.trim(), options:Object.keys(PL).map(function(k){return PL[k];}), answer:PL[p], why:PW[p]}); }); return out; }
 var TECH=[
   ["\"Daybreak: the household slept. / I rose, blessed by the sun.\" (Barn Owl)","Religious imagery",["Onomatopoeia","Simile","Hyperbole"],"\"blessed\" is sacred language: the child is presented as holy and innocent, as if baptised."],
@@ -989,7 +990,7 @@ var DECODE=[
 var ORDER=[
   {title:"Paragraph order (Barn Owl)", parts:["In \"Barn Owl\", Harwood shows that a single experience can shatter a child's belief that she controls life and death.","\"blessed by the sun\" uses religious imagery to cast the child as innocent.","The demonic metaphor \"A horny fiend\" exposes the thrill of disobedience inside the \"blessed\" child.","Harwood described her poetry as an attempt to keep off \"existential terror\"; here that terror arrives.","The experience permanently alters her view of the world."]},
   {title:"QTE order", parts:["Quote: \"hope fell headlong from its eagle height\"","Technique: personification and alliteration","Effect (see/feel): a sudden, violent drop","Effect (meaning): the fall from innocence into knowledge"]},
-  {title:"Whole essay order", parts:["Thesis","Context","Roadmap","Body paragraphs (PQTEL ×3)","Restate","So what"]}
+  {title:"Whole essay order", parts:["Definition","Thesis","Contextual roadmap","Body paragraphs (PQTEL ×3)","Restate","So what"]}
 ];
 var DRILLS=[
   {id:"which",t:"Which poem?",s:"Match the quote to the poem",type:"mc",make:whichItems},
@@ -1109,7 +1110,7 @@ document.getElementById("wAudit").onclick=function(){
   document.getElementById("auditCard").hidden=false; rep(items.every(function(i){return i[0];}));
 };
 function essayPrompt(){ return "[HW-E1] HSC Essay Engine v"+VERSION+" · Gwen Harwood · Common Module (Texts and human experiences), HSC English Advanced 2027 · Timed "+mins+"-minute response\n"+
-  "Question: "+wQ.value+"\nFormula used: TCR · PQTEL ×3 · RS\n\nMy response:\n"+wBox.value.trim()+"\n\n"+
+  "Question: "+wQ.value+"\nFormula used: D·T·CR intro · PQTEL ×3 · RS\n\nMy response:\n"+wBox.value.trim()+"\n\n"+
   "Mark this out of 20 against the NESA 17–20 / 13–16 / 9–12 band criteria. Give: the mark, a one-line verdict, 2–3 strengths, the 3 most important fixes (quote my words and show how to fix each), one sentence rewritten to Band 6, and what to practise next. Check my quotes and flag any that look inaccurate. Be honest; don't inflate. Australian spelling."; }
 document.getElementById("wCopy").onclick=function(){ if(words(wBox.value)<30){ document.getElementById("wAIstate").textContent="Write a bit more first."; return; } copyText(essayPrompt(), this); markDone("HW-E1"); rep(true); };
 onSample(function(){ document.getElementById("wAI").hidden=false; });

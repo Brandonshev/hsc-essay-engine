@@ -1,5 +1,5 @@
 #!/bin/bash
-# HSC Essay Engine - build script v1.1.0
+# HSC Essay Engine - build script v1.1.1
 # Usage:  bash build.sh            (build and open)
 #         bash build.sh --install  (build, copy to /Applications, open)
 set -euo pipefail
@@ -39,7 +39,8 @@ echo "Built: ${APP} (v${VERSION})"
 if [[ "${1:-}" == "--install" ]]; then
   rm -rf "/Applications/$APP"
   cp -R "$APP" /Applications/
-  echo "Installed to /Applications"
+  rm -rf "$APP"
+  echo "Installed to /Applications (no duplicate left in this folder)"
   open "/Applications/$APP"
 else
   open "$APP"
